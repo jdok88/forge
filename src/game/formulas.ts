@@ -25,6 +25,14 @@ export function gemsToSkip(remainingSec: number): number {
   return Math.round((remainingSec * 23) / 10000)
 }
 
+/**
+ * 노드 레벨 입력을 0~25 정수로 정규화한다.
+ *
+ * 계산이 아니라 입력 위생 처리이므로 반올림이 아닌 절사를 쓴다. 노드 레벨은
+ * 정수만 유효한데(DB CHECK 0..25, UI 스테퍼), 만약 소수가 흘러들어오면
+ * 올림은 플레이어가 찍지 않은 레벨을 인정해 소요시간을 실제보다 짧게
+ * 만든다 — 알림이 일찍 울리는 쪽이라 더 나쁘다. 절사가 보수적이다.
+ */
 export function clampNodeLevel(lv: number): number {
   if (!Number.isFinite(lv)) return 0
   return Math.min(MAX_NODE_LEVEL, Math.max(0, Math.trunc(lv)))

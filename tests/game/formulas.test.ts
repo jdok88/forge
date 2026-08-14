@@ -60,4 +60,14 @@ describe('clampNodeLevel', () => {
     expect(clampNodeLevel(30)).toBe(25)
     expect(clampNodeLevel(12)).toBe(12)
   })
+  it('소수는 절사한다 — 올림하면 찍지 않은 레벨을 인정하게 된다', () => {
+    expect(clampNodeLevel(12.7)).toBe(12)
+    expect(clampNodeLevel(0.9)).toBe(0)
+    expect(clampNodeLevel(24.99)).toBe(24)
+  })
+  it('NaN 과 Infinity 는 0 으로 떨어뜨린다', () => {
+    expect(clampNodeLevel(NaN)).toBe(0)
+    expect(clampNodeLevel(Infinity)).toBe(0)
+    expect(clampNodeLevel(-Infinity)).toBe(0)
+  })
 })
