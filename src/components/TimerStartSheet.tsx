@@ -7,6 +7,7 @@ import { gemsToSkip } from '../game/formulas'
 import { startTimer, type TimerKind } from '../hooks/useTimers'
 import { toConfig, type AccountRow } from '../hooks/useAccounts'
 import { subscribePush } from '../lib/push'
+import { useNotificationStatus } from '../hooks/useNotificationStatus'
 import type { Rarity } from '../game/types'
 
 const TIER_LABEL = ['I', 'II', 'III', 'IV', 'V'] as const
@@ -21,6 +22,7 @@ interface Props {
 
 export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props) {
   const cfg = useMemo(() => toConfig(account), [account])
+  const { active: notifActive, refresh: refreshNotifStatus } = useNotificationStatus()
 
   // 2단계 입력 상태
   const [rarity, setRarity] = useState<Rarity>('common')
@@ -54,6 +56,10 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
   const forgeFree = kind === 'forge' && isForgeFreeSkip(targetForgeLevel)
 
   const title = kind === 'egg' ? '펫 부화' : kind === 'tech' ? '기술 연구' : '대장간 업그레이드'
+
+  async function enableNotifications() {
+    try { await subscribePush() } finally { refreshNotifStatus() }
+  }
 
   async function submit() {
     setBusy(true); setError(null)
@@ -169,6 +175,12 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
               onChange={v => { setTouched(true); setSec(v) }}
             />
             <p style={{ color: 'var(--text-dim)' }}>즉시완료 시 젬 {gemsToSkip(sec).toLocaleString()}</p>
+            {notifActive === false && (
+              <p style={{ color: 'var(--danger)' }}>
+                알림이 꺼져 있어 완료 시 알림을 받을 수 없습니다.{' '}
+                <button type="button" onClick={() => void enableNotifications()}>알림 켜기</button>
+              </p>
+            )}
             <button type="button" onClick={submit} disabled={busy || sec <= 0}>시작</button>
           </>
         )}

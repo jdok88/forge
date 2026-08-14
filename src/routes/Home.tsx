@@ -6,29 +6,27 @@ import { useSession } from '../hooks/useSession'
 import { formatDuration } from '../game/format'
 import { forgeDuration } from '../game/durations'
 import { resourceEta } from '../game/eta'
-import { subscribePush, type PushFailure } from '../lib/push'
+import { subscribePush, unsubscribePush, type PushFailure } from '../lib/push'
 import { supabase } from '../lib/supabase'
 import { GuestUpgradeBanner } from '../components/GuestUpgradeBanner'
 import { PushHelp } from '../components/PushHelp'
 import { Countdown } from '../components/Countdown'
 import { isInAppBrowser } from '../lib/browser'
+import { useNotificationStatus } from '../hooks/useNotificationStatus'
 
 const KIND_ICON = { egg: '🥚', tech: '⚗️', forge: '⚒️' } as const
 
-function notificationsActive() {
-  return typeof Notification !== 'undefined' && Notification.permission === 'granted'
-}
-
 function NotificationBanner() {
-  const [active, setActive] = useState(notificationsActive())
+  const { active, refresh } = useNotificationStatus()
   const [reason, setReason] = useState<PushFailure | null>(
     isInAppBrowser() ? 'no-serviceworker' : null
   )
   const [detail, setDetail] = useState<string | undefined>(undefined)
   const [okMessage, setOkMessage] = useState<string | null>(null)
+  const [offError, setOffError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  if (active) return null
+  if (active === null) return null
 
   async function enable() {
     setBusy(true)
@@ -38,7 +36,7 @@ function NotificationBanner() {
         setOkMessage('알림이 켜졌습니다.')
         setReason(null)
         setDetail(undefined)
-        setActive(true)
+        refresh()
       } else {
         setReason(r.reason)
         setDetail(r.detail)
@@ -51,12 +49,37 @@ function NotificationBanner() {
     }
   }
 
+  async function disable() {
+    setBusy(true)
+    setOffError(null)
+    try {
+      await unsubscribePush()
+      refresh()
+    } catch (e) {
+      setOffError(e instanceof Error ? e.message : '알림을 끄지 못했습니다.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (active) {
+    return (
+      <div style={{ marginBottom: 'var(--sp-4)', fontSize: 'var(--fs-sm)' }}>
+        <span style={{ color: 'var(--text-dim)' }}>알림 켜짐</span>{' '}
+        <button type="button" onClick={() => void disable()} disabled={busy}>알림 끄기</button>
+        {offError && <p style={{ color: 'var(--danger)' }}>{offError}</p>}
+      </div>
+    )
+  }
+
   return (
     <div style={{
       background: 'var(--surface-2)', border: '1px solid var(--accent)',
       borderRadius: 'var(--r-md)', padding: 'var(--sp-3)', marginBottom: 'var(--sp-4)',
     }}>
-      <p>알림이 꺼져 있습니다. 켜지 않으면 타이머가 끝나도 알려드릴 수 없습니다.</p>
+      <p style={{ color: 'var(--danger)' }}>
+        알림이 꺼져 있습니다. <strong>타이머가 완료되어도 알림이 오지 않습니다.</strong>
+      </p>
       <button type="button" onClick={() => void enable()} disabled={busy}>알림 켜기</button>
       {okMessage && <p>{okMessage}</p>}
       {reason && <PushHelp reason={reason} detail={detail} />}
