@@ -5,8 +5,44 @@ import { useTimers } from '../hooks/useTimers'
 import { formatCountdown, formatDuration } from '../game/format'
 import { forgeDuration } from '../game/durations'
 import { resourceEta } from '../game/eta'
+import { subscribePush } from '../lib/push'
 
 const KIND_ICON = { egg: '🥚', tech: '⚗️', forge: '⚒️' } as const
+
+function notificationsActive() {
+  return typeof Notification !== 'undefined' && Notification.permission === 'granted'
+}
+
+function NotificationBanner() {
+  const [active, setActive] = useState(notificationsActive())
+  const [status, setStatus] = useState<string | null>(null)
+
+  if (active) return null
+
+  async function enable() {
+    const r = await subscribePush()
+    if (r === 'ok') {
+      setStatus('알림이 켜졌습니다.')
+      setActive(true)
+    } else if (r === 'denied') {
+      setStatus('브라우저에서 알림이 차단되어 있습니다. 사이트 설정에서 알림을 허용해 주세요.')
+    } else {
+      setStatus('이 브라우저는 푸시를 지원하지 않습니다. 아래 안내를 확인해 주세요.')
+    }
+  }
+
+  return (
+    <div style={{
+      background: 'var(--surface-2)', border: '1px solid var(--accent)',
+      borderRadius: 'var(--r-md)', padding: 'var(--sp-3)', marginBottom: 'var(--sp-4)',
+    }}>
+      <p>알림이 꺼져 있습니다. 켜지 않으면 타이머가 끝나도 알려드릴 수 없습니다.</p>
+      <button type="button" onClick={() => void enable()}>알림 켜기</button>
+      {status && <p>{status}</p>}
+      {status && status.includes('지원하지') && <Link to="/install">iOS 설치 안내 보기</Link>}
+    </div>
+  )
+}
 
 export function Home() {
   const { servers, accounts, loading, error, reload } = useAccounts()
@@ -19,6 +55,7 @@ export function Home() {
   return (
     <div>
       <h1>Forge 알람</h1>
+      <NotificationBanner />
       <Link to="/install">알림이 안 오나요?</Link>
 
       {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}

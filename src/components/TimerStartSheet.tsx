@@ -6,6 +6,7 @@ import { eggHatchSec, techDuration, forgeDuration, isForgeFreeSkip } from '../ga
 import { gemsToSkip } from '../game/formulas'
 import { startTimer, type TimerKind } from '../hooks/useTimers'
 import { toConfig, type AccountRow } from '../hooks/useAccounts'
+import { subscribePush } from '../lib/push'
 import type { Rarity } from '../game/types'
 
 const TIER_LABEL = ['I', 'II', 'III', 'IV', 'V'] as const
@@ -62,6 +63,11 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
         : kind === 'tech' ? { nodeId, tier, level }
         : { targetLevel: targetForgeLevel }
       await startTimer({ accountId: account.id, kind, slot, meta, sec, autoSec: auto.sec })
+      // 타이머를 막 시작해 알림을 받고 싶은 의도가 가장 뚜렷한 시점이므로,
+      // 알림이 꺼져 있으면 여기서 켜기를 시도한다. 거부돼도 타이머 시작 자체는 막지 않는다.
+      if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+        try { await subscribePush() } catch { /* 무시 — 타이머 시작은 이미 성공 */ }
+      }
       onDone()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
