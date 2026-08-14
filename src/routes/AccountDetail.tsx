@@ -13,6 +13,7 @@ export function AccountDetail() {
   const { accounts, reload: reloadAccounts } = useAccounts()
   const { timers, error, reload } = useTimers(id)
   const [sheet, setSheet] = useState<{ kind: TimerKind; slot: number } | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const account = accounts.find(a => a.id === id)
   if (!account) return <p>계정을 찾을 수 없습니다.</p>
@@ -22,18 +23,28 @@ export function AccountDetail() {
 
   async function onComplete(timerId: string) {
     const t = timers.find(x => x.id === timerId)
-    await completeTimer(timerId)
-    // 대장간 완료 시 레벨을 올린다
-    if (t?.kind === 'forge' && account) {
-      await updateAccount(account.id, { forge_level: t.meta.targetLevel as number })
-      await reloadAccounts()
+    setActionError(null)
+    try {
+      // 레벨을 먼저 올린다. forge_level 에 절대값을 쓰므로 재시도해도 중복 증가가 없다.
+      if (t?.kind === 'forge' && account) {
+        await updateAccount(account.id, { forge_level: t.meta.targetLevel as number })
+        await reloadAccounts()
+      }
+      await completeTimer(timerId)
+      await reload()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : '완료 처리에 실패했습니다.')
     }
-    await reload()
   }
 
   async function onCancel(timerId: string) {
-    await cancelTimer(timerId)
-    await reload()
+    setActionError(null)
+    try {
+      await cancelTimer(timerId)
+      await reload()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : '취소 처리에 실패했습니다.')
+    }
   }
 
   return (
@@ -43,6 +54,7 @@ export function AccountDetail() {
       <Link to={`/account/${account.id}/settings`}>설정</Link>
 
       {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
+      {actionError && <p style={{ color: 'var(--danger)' }}>{actionError}</p>}
 
       <h2>펫 부화</h2>
       {EGG_SLOTS.map(slot => (

@@ -77,7 +77,7 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
           {RARITIES.map(r => (
             <button
               key={r} type="button"
-              onClick={() => { setRarity(r); setTouched(false) }}
+              onClick={() => setRarity(r)}
               style={{
                 borderColor: `var(--rarity-${r})`,
                 fontWeight: rarity === r ? 700 : 400,
@@ -102,7 +102,7 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
 
           <label>
             티어
-            <select value={tier} onChange={e => { setTier(Number(e.target.value)); setTouched(false) }}>
+            <select value={tier} onChange={e => setTier(Number(e.target.value))}>
               {[1, 2, 3, 4, 5].map(t => (
                 <option key={t} value={t}>{TIER_LABEL[t - 1]}</option>
               ))}
@@ -111,7 +111,7 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
 
           <label>
             몇 번째 업그레이드
-            <select value={level} onChange={e => { setLevel(Number(e.target.value)); setTouched(false) }}>
+            <select value={level} onChange={e => setLevel(Number(e.target.value))}>
               {[1, 2, 3, 4, 5].map(l => <option key={l} value={l}>{l}/5</option>)}
             </select>
           </label>
