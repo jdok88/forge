@@ -1,0 +1,59 @@
+:root {
+  /* 표면 */
+  --bg: #14161c;
+  --surface: #1c1f28;
+  --surface-2: #252936;
+  --border: #333949;
+
+  /* 텍스트 */
+  --text: #e8eaf0;
+  --text-dim: #99a0b3;
+
+  /* 강조 */
+  --accent: #7c8cff;
+  --danger: #ff6b6b;
+  --success: #4ade80;
+
+  /* 등급 — 게임 내 드롭 확률표 기준 */
+  --rarity-common: #b8b8b8;
+  --rarity-rare: #4cc4f5;
+  --rarity-epic: #5fd97f;
+  --rarity-legendary: #f5d94c;
+  --rarity-ultimate: #f56b6b;
+  --rarity-mythic: #b06bf5;
+
+  /* 간격 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* 모서리 */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+
+  /* 타이포 */
+  --font: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 24px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  /* 모바일 전용 — 데스크톱에서도 폭을 제한해 폰 레이아웃을 유지한다 */
+  max-width: 560px;
+  margin-inline: auto;
+  padding: var(--sp-4);
+  padding-bottom: var(--sp-6);
+}
