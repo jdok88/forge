@@ -27,3 +27,6 @@ dist-ssr
 *.sw?
 .env.vapid-private
 .env.supabase-token
+
+# 게임 스크린샷·데이터 시트 원본 (용량 48MB, 로컬 보관)
+image/
