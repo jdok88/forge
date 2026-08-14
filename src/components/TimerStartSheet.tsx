@@ -52,6 +52,8 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
   const forgeMaxed = kind === 'forge' && targetForgeLevel > 35
   const forgeFree = kind === 'forge' && isForgeFreeSkip(targetForgeLevel)
 
+  const title = kind === 'egg' ? '펫 부화' : kind === 'tech' ? '기술 연구' : '대장간 업그레이드'
+
   async function submit() {
     setBusy(true); setError(null)
     try {
@@ -69,78 +71,103 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
   }
 
   return (
-    <div>
-      {/* 2단계 — 대상 입력 */}
-      {kind === 'egg' && (
-        <fieldset>
-          <legend>알 등급</legend>
-          {RARITIES.map(r => (
-            <button
-              key={r} type="button"
-              onClick={() => setRarity(r)}
-              style={{
-                borderColor: `var(--rarity-${r})`,
-                fontWeight: rarity === r ? 700 : 400,
-              }}
-            >
-              {RARITY_LABEL[r]}
-            </button>
-          ))}
-        </fieldset>
-      )}
+    <div
+      onClick={onCancel}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        zIndex: 100, padding: 'var(--sp-3)',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 'var(--sp-4)',
+          width: '100%', maxWidth: '520px', maxHeight: '85vh', overflowY: 'auto',
+        }}
+      >
+        <h2>{title}</h2>
+        {/* 2단계 — 대상 입력 */}
+        {kind === 'egg' && (
+          <fieldset>
+            <legend>알 등급</legend>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
+              {RARITIES.map(r => (
+                <button
+                  key={r} type="button"
+                  onClick={() => setRarity(r)}
+                  style={{
+                    border: `2px solid var(--rarity-${r})`,
+                    borderRadius: 'var(--r-sm)',
+                    padding: 'var(--sp-2) var(--sp-3)',
+                    margin: 'var(--sp-1)',
+                    cursor: 'pointer',
+                    fontSize: 'var(--fs-md)',
+                    background: rarity === r ? `var(--rarity-${r})` : 'transparent',
+                    color: rarity === r ? 'var(--bg)' : 'var(--text)',
+                    fontWeight: rarity === r ? 700 : 400,
+                  }}
+                >
+                  {RARITY_LABEL[r]}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        )}
 
-      {kind === 'tech' && (
-        <fieldset>
-          <legend>기술</legend>
-          <select value={nodeId} onChange={e => setNodeId(e.target.value)}>
-            {TECH_NODES.map(n => (
-              <option key={n.id} value={n.id}>
-                [{BRANCH_LABEL[n.branch]}] {n.name}
-              </option>
-            ))}
-          </select>
-
-          <label>
-            티어
-            <select value={tier} onChange={e => setTier(Number(e.target.value))}>
-              {[1, 2, 3, 4, 5].map(t => (
-                <option key={t} value={t}>{TIER_LABEL[t - 1]}</option>
+        {kind === 'tech' && (
+          <fieldset>
+            <legend>기술</legend>
+            <select value={nodeId} onChange={e => setNodeId(e.target.value)}>
+              {TECH_NODES.map(n => (
+                <option key={n.id} value={n.id}>
+                  [{BRANCH_LABEL[n.branch]}] {n.name}
+                </option>
               ))}
             </select>
-          </label>
 
-          <label>
-            몇 번째 업그레이드
-            <select value={level} onChange={e => setLevel(Number(e.target.value))}>
-              {[1, 2, 3, 4, 5].map(l => <option key={l} value={l}>{l}/5</option>)}
-            </select>
-          </label>
-        </fieldset>
-      )}
+            <label>
+              티어
+              <select value={tier} onChange={e => setTier(Number(e.target.value))}>
+                {[1, 2, 3, 4, 5].map(t => (
+                  <option key={t} value={t}>{TIER_LABEL[t - 1]}</option>
+                ))}
+              </select>
+            </label>
 
-      {kind === 'forge' && (
-        <p>
-          대장간 {account.forge_level} → <strong>{targetForgeLevel}</strong>
-          {forgeMaxed && ' — 이미 최대 레벨입니다. 승천 후 레벨을 1로 되돌리세요.'}
-          {forgeFree && ' — 게임에서 무료 즉시완료가 가능한 구간입니다.'}
-        </p>
-      )}
+            <label>
+              몇 번째 업그레이드
+              <select value={level} onChange={e => setLevel(Number(e.target.value))}>
+                {[1, 2, 3, 4, 5].map(l => <option key={l} value={l}>{l}/5</option>)}
+              </select>
+            </label>
+          </fieldset>
+        )}
 
-      {/* 3단계 — 시간 확인·수정 */}
-      {!forgeMaxed && (
-        <>
-          {auto.cost && <p>필요 자원: {auto.cost}</p>}
-          <DurationInput
-            value={sec}
-            autoSec={auto.sec}
-            onChange={v => { setTouched(true); setSec(v) }}
-          />
-          <p style={{ color: 'var(--text-dim)' }}>즉시완료 시 젬 {gemsToSkip(sec).toLocaleString()}</p>
-          <button type="button" onClick={submit} disabled={busy || sec <= 0}>시작</button>
-        </>
-      )}
-      <button type="button" onClick={onCancel}>취소</button>
-      {error && <p role="alert" style={{ color: 'var(--danger)' }}>{error}</p>}
+        {kind === 'forge' && (
+          <p>
+            대장간 {account.forge_level} → <strong>{targetForgeLevel}</strong>
+            {forgeMaxed && ' — 이미 최대 레벨입니다. 승천 후 레벨을 1로 되돌리세요.'}
+            {forgeFree && ' — 게임에서 무료 즉시완료가 가능한 구간입니다.'}
+          </p>
+        )}
+
+        {/* 3단계 — 시간 확인·수정 */}
+        {!forgeMaxed && (
+          <>
+            {auto.cost && <p>필요 자원: {auto.cost}</p>}
+            <DurationInput
+              value={sec}
+              autoSec={auto.sec}
+              onChange={v => { setTouched(true); setSec(v) }}
+            />
+            <p style={{ color: 'var(--text-dim)' }}>즉시완료 시 젬 {gemsToSkip(sec).toLocaleString()}</p>
+            <button type="button" onClick={submit} disabled={busy || sec <= 0}>시작</button>
+          </>
+        )}
+        <button type="button" onClick={onCancel}>취소</button>
+        {error && <p role="alert" style={{ color: 'var(--danger)' }}>{error}</p>}
+      </div>
     </div>
   )
 }
