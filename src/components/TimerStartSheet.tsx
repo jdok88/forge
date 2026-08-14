@@ -66,6 +66,7 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
       // 타이머를 막 시작해 알림을 받고 싶은 의도가 가장 뚜렷한 시점이므로,
       // 알림이 꺼져 있으면 여기서 켜기를 시도한다. 거부돼도 타이머 시작 자체는 막지 않는다.
       if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+        // 결과(성공/실패 사유) 모두 무시 — 이건 부가적인 제안일 뿐, 타이머 시작을 막으면 안 된다.
         try { await subscribePush() } catch { /* 무시 — 타이머 시작은 이미 성공 */ }
       }
       onDone()

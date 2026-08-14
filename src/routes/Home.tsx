@@ -6,7 +6,7 @@ import { useSession } from '../hooks/useSession'
 import { formatCountdown, formatDuration } from '../game/format'
 import { forgeDuration } from '../game/durations'
 import { resourceEta } from '../game/eta'
-import { subscribePush, type PushResult } from '../lib/push'
+import { subscribePush, type PushFailure } from '../lib/push'
 import { supabase } from '../lib/supabase'
 import { GuestUpgradeBanner } from '../components/GuestUpgradeBanner'
 import { PushHelp } from '../components/PushHelp'
@@ -20,21 +20,33 @@ function notificationsActive() {
 
 function NotificationBanner() {
   const [active, setActive] = useState(notificationsActive())
-  const [result, setResult] = useState<Exclude<PushResult, 'ok'> | null>(
+  const [reason, setReason] = useState<PushFailure | null>(
     isInAppBrowser() ? 'no-serviceworker' : null
   )
+  const [detail, setDetail] = useState<string | undefined>(undefined)
   const [okMessage, setOkMessage] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
   if (active) return null
 
   async function enable() {
-    const r = await subscribePush()
-    if (r === 'ok') {
-      setOkMessage('알림이 켜졌습니다.')
-      setResult(null)
-      setActive(true)
-    } else {
-      setResult(r)
+    setBusy(true)
+    try {
+      const r = await subscribePush()
+      if (r.ok) {
+        setOkMessage('알림이 켜졌습니다.')
+        setReason(null)
+        setDetail(undefined)
+        setActive(true)
+      } else {
+        setReason(r.reason)
+        setDetail(r.detail)
+      }
+    } catch (e) {
+      setReason('subscribe-failed')
+      setDetail(String(e))
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -44,9 +56,9 @@ function NotificationBanner() {
       borderRadius: 'var(--r-md)', padding: 'var(--sp-3)', marginBottom: 'var(--sp-4)',
     }}>
       <p>알림이 꺼져 있습니다. 켜지 않으면 타이머가 끝나도 알려드릴 수 없습니다.</p>
-      <button type="button" onClick={() => void enable()}>알림 켜기</button>
+      <button type="button" onClick={() => void enable()} disabled={busy}>알림 켜기</button>
       {okMessage && <p>{okMessage}</p>}
-      {result && <PushHelp result={result} />}
+      {reason && <PushHelp reason={reason} detail={detail} />}
     </div>
   )
 }

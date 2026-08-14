@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { subscribePush, type PushResult } from '../lib/push'
+import { subscribePush, type PushFailure } from '../lib/push'
 import { isIos } from '../lib/browser'
 import { PushHelp } from '../components/PushHelp'
 
@@ -11,16 +11,29 @@ const isStandalone = () =>
 
 export function InstallGuide() {
   const [okMessage, setOkMessage] = useState<string | null>(null)
-  const [result, setResult] = useState<Exclude<PushResult, 'ok'> | null>(null)
+  const [reason, setReason] = useState<PushFailure | null>(null)
+  const [detail, setDetail] = useState<string | undefined>(undefined)
+  const [busy, setBusy] = useState(false)
 
   async function enable() {
-    const r = await subscribePush()
-    if (r === 'ok') {
-      setOkMessage('알림이 켜졌습니다.')
-      setResult(null)
-    } else {
+    setBusy(true)
+    try {
+      const r = await subscribePush()
+      if (r.ok) {
+        setOkMessage('알림이 켜졌습니다.')
+        setReason(null)
+        setDetail(undefined)
+      } else {
+        setOkMessage(null)
+        setReason(r.reason)
+        setDetail(r.detail)
+      }
+    } catch (e) {
       setOkMessage(null)
-      setResult(r)
+      setReason('subscribe-failed')
+      setDetail(String(e))
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -63,9 +76,9 @@ export function InstallGuide() {
         </section>
       )}
 
-      <button type="button" onClick={() => void enable()}>알림 켜기</button>
+      <button type="button" onClick={() => void enable()} disabled={busy}>알림 켜기</button>
       {okMessage && <p>{okMessage}</p>}
-      {result && <PushHelp result={result} />}
+      {reason && <PushHelp reason={reason} detail={detail} />}
     </div>
   )
 }

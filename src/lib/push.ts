@@ -9,32 +9,54 @@ export function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   return out
 }
 
-export type PushResult =
-  | 'ok'
-  | 'denied'
-  | 'no-serviceworker'   // navigator.serviceWorker 없음 — 대개 인앱 브라우저
-  | 'no-pushmanager'     // PushManager 없음 — iOS Safari 미설치 상태 등
-  | 'insecure'           // 보안 컨텍스트가 아님 (https 아님)
+export type PushFailure =
+  | 'denied' | 'no-serviceworker' | 'no-pushmanager' | 'insecure'
+  | 'sw-timeout' | 'subscribe-failed' | 'save-failed' | 'not-signed-in'
 
-export async function subscribePush(): Promise<PushResult> {
-  if (window.isSecureContext === false) return 'insecure'
-  if (!('serviceWorker' in navigator)) return 'no-serviceworker'
-  if (!('PushManager' in window)) return 'no-pushmanager'
+export type PushOutcome =
+  | { ok: true }
+  | { ok: false; reason: PushFailure; detail?: string }
+
+const SW_READY_TIMEOUT_MS = 10_000
+
+export async function subscribePush(): Promise<PushOutcome> {
+  if (window.isSecureContext === false) return { ok: false, reason: 'insecure' }
+  if (!('serviceWorker' in navigator)) return { ok: false, reason: 'no-serviceworker' }
+  if (!('PushManager' in window)) return { ok: false, reason: 'no-pushmanager' }
 
   const permission = await Notification.requestPermission()
-  if (permission !== 'granted') return 'denied'
+  if (permission !== 'granted') return { ok: false, reason: 'denied' }
 
-  const reg = await navigator.serviceWorker.ready
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
-  })
+  let reg: ServiceWorkerRegistration
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    reg = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('sw-timeout')), SW_READY_TIMEOUT_MS)
+      }),
+    ])
+  } catch {
+    return { ok: false, reason: 'sw-timeout' }
+  } finally {
+    if (timer !== undefined) clearTimeout(timer)
+  }
+
+  let sub: PushSubscription
+  try {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
+    })
+  } catch (e) {
+    return { ok: false, reason: 'subscribe-failed', detail: String(e) }
+  }
 
   const json = sub.toJSON()
   const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) throw new Error('로그인이 필요합니다')
+  if (!userData.user) return { ok: false, reason: 'not-signed-in' }
 
-  await supabase.from('push_subscriptions').upsert({
+  const { error } = await supabase.from('push_subscriptions').upsert({
     user_id: userData.user.id,
     endpoint: sub.endpoint,
     p256dh: json.keys!.p256dh,
@@ -42,7 +64,9 @@ export async function subscribePush(): Promise<PushResult> {
     user_agent: navigator.userAgent,
   }, { onConflict: 'endpoint' })
 
-  return 'ok'
+  if (error) return { ok: false, reason: 'save-failed', detail: error.message }
+
+  return { ok: true }
 }
 
 export async function unsubscribePush(): Promise<void> {
