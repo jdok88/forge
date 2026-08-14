@@ -67,6 +67,8 @@ export function Home() {
   const { session } = useSession()
   const [serverName, setServerName] = useState('')
   const [nick, setNick] = useState<Record<string, string>>({})
+  const [formError, setFormError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
   if (loading) return <p>불러오는 중…</p>
 
@@ -131,32 +133,64 @@ export function Home() {
 
             <form onSubmit={async e => {
               e.preventDefault()
+              setFormError(null)
               const v = (nick[s.id] ?? '').trim()
               if (!v) return
-              await createAccount(s.id, v)
-              setNick({ ...nick, [s.id]: '' })
-              await reload()
+              setBusy(true)
+              try {
+                await createAccount(s.id, v)
+                setNick({ ...nick, [s.id]: '' })
+                await reload()
+              } catch (err) {
+                setFormError(err instanceof Error ? err.message : '추가하지 못했습니다.')
+              } finally {
+                setBusy(false)
+              }
             }}>
               <input placeholder="계정 추가" value={nick[s.id] ?? ''}
                 onChange={e => setNick({ ...nick, [s.id]: e.target.value })} />
-              <button type="submit">추가</button>
+              <button type="submit" disabled={busy}>추가</button>
             </form>
           </section>
         )
       })}
 
-      <form onSubmit={async e => {
-        e.preventDefault()
-        const v = serverName.trim()
-        if (!v) return
-        await createServer(v)
-        setServerName('')
-        await reload()
-      }}>
-        <input placeholder="서버 추가" value={serverName}
-          onChange={e => setServerName(e.target.value)} />
-        <button type="submit">추가</button>
-      </form>
+      {(() => {
+        const existing = new Set(servers.map(s => s.name))
+        const available = Array.from({ length: 57 }, (_, i) => i + 1)
+          .filter(n => !existing.has(String(n)))
+        const full = available.length === 0
+
+        return (
+          <form onSubmit={async e => {
+            e.preventDefault()
+            setFormError(null)
+            const v = serverName
+            if (!v) return
+            setBusy(true)
+            try {
+              await createServer(v)
+              setServerName('')
+              await reload()
+            } catch (err) {
+              setFormError(err instanceof Error ? err.message : '추가하지 못했습니다.')
+            } finally {
+              setBusy(false)
+            }
+          }}>
+            <select value={serverName} onChange={e => setServerName(e.target.value)} disabled={full}>
+              <option value="">서버 선택</option>
+              {available.map(n => (
+                <option key={n} value={String(n)}>{n}서버</option>
+              ))}
+            </select>
+            <button type="submit" disabled={busy || full || !serverName}>추가</button>
+            {full && <p style={{ color: 'var(--text-dim)' }}>모든 서버가 추가되었습니다.</p>}
+          </form>
+        )
+      })()}
+
+      {formError && <p style={{ color: 'var(--danger)' }}>{formError}</p>}
 
       <button type="button" onClick={() => void logout(isAnonymous)}>로그아웃</button>
     </div>
