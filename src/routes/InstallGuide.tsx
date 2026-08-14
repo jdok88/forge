@@ -1,27 +1,27 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { subscribePush } from '../lib/push'
+import { subscribePush, type PushResult } from '../lib/push'
+import { isIos } from '../lib/browser'
+import { PushHelp } from '../components/PushHelp'
 
-const isIos = () =>
-  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-  // iPadOS 13+ 는 기본으로 데스크톱 UA(Macintosh)를 보고한다.
-  // 터치 포인트 수로 실제 아이패드를 구분한다.
-  (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
 const isStandalone = () =>
   window.matchMedia('(display-mode: standalone)').matches ||
   // iOS Safari 전용 플래그
   (navigator as unknown as { standalone?: boolean }).standalone === true
 
 export function InstallGuide() {
-  const [status, setStatus] = useState<string | null>(null)
+  const [okMessage, setOkMessage] = useState<string | null>(null)
+  const [result, setResult] = useState<Exclude<PushResult, 'ok'> | null>(null)
 
   async function enable() {
     const r = await subscribePush()
-    setStatus(
-      r === 'ok' ? '알림이 켜졌습니다.'
-      : r === 'denied' ? '브라우저에서 알림이 차단되어 있습니다. 사이트 설정에서 허용해 주세요.'
-      : '이 브라우저는 푸시를 지원하지 않습니다.'
-    )
+    if (r === 'ok') {
+      setOkMessage('알림이 켜졌습니다.')
+      setResult(null)
+    } else {
+      setOkMessage(null)
+      setResult(r)
+    }
   }
 
   return (
@@ -64,7 +64,8 @@ export function InstallGuide() {
       )}
 
       <button type="button" onClick={() => void enable()}>알림 켜기</button>
-      {status && <p>{status}</p>}
+      {okMessage && <p>{okMessage}</p>}
+      {result && <PushHelp result={result} />}
     </div>
   )
 }

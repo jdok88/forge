@@ -9,8 +9,17 @@ export function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   return out
 }
 
-export async function subscribePush(): Promise<'ok' | 'denied' | 'unsupported'> {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return 'unsupported'
+export type PushResult =
+  | 'ok'
+  | 'denied'
+  | 'no-serviceworker'   // navigator.serviceWorker 없음 — 대개 인앱 브라우저
+  | 'no-pushmanager'     // PushManager 없음 — iOS Safari 미설치 상태 등
+  | 'insecure'           // 보안 컨텍스트가 아님 (https 아님)
+
+export async function subscribePush(): Promise<PushResult> {
+  if (window.isSecureContext === false) return 'insecure'
+  if (!('serviceWorker' in navigator)) return 'no-serviceworker'
+  if (!('PushManager' in window)) return 'no-pushmanager'
 
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') return 'denied'
