@@ -1,3 +1,62 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { subscribePush } from '../lib/push'
+
+const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
+const isStandalone = () =>
+  window.matchMedia('(display-mode: standalone)').matches ||
+  // iOS Safari 전용 플래그
+  (navigator as unknown as { standalone?: boolean }).standalone === true
+
 export function InstallGuide() {
-  return null
+  const [status, setStatus] = useState<string | null>(null)
+
+  async function enable() {
+    const r = await subscribePush()
+    setStatus(
+      r === 'ok' ? '알림이 켜졌습니다.'
+      : r === 'denied' ? '브라우저에서 알림이 차단되어 있습니다. 사이트 설정에서 허용해 주세요.'
+      : '이 브라우저는 푸시를 지원하지 않습니다.'
+    )
+  }
+
+  return (
+    <div>
+      <Link to="/">← 홈</Link>
+      <h1>알림 설정</h1>
+
+      {isIos() && !isStandalone() && (
+        <section style={{ background: 'var(--surface-2)', padding: 'var(--sp-4)', borderRadius: 'var(--r-md)' }}>
+          <h2>iPhone / iPad</h2>
+          <p>
+            iOS는 <strong>홈 화면에 추가</strong>한 뒤에만 알림을 받을 수 있습니다.
+            (브라우저 탭 상태로는 불가능합니다)
+          </p>
+          <ol>
+            <li>Safari 하단의 <strong>공유</strong> 버튼을 누릅니다</li>
+            <li><strong>홈 화면에 추가</strong>를 선택합니다</li>
+            <li>홈 화면에 생긴 아이콘으로 앱을 다시 엽니다</li>
+            <li>이 화면에서 <strong>알림 켜기</strong>를 누릅니다</li>
+          </ol>
+        </section>
+      )}
+
+      {isIos() && isStandalone() && (
+        <section style={{ background: 'var(--surface-2)', padding: 'var(--sp-4)', borderRadius: 'var(--r-md)' }}>
+          <h2>iPhone / iPad</h2>
+          <p>이미 홈 화면에 추가된 상태입니다. 아래 버튼으로 알림을 켜세요.</p>
+        </section>
+      )}
+
+      {!isIos() && (
+        <section>
+          <h2>Android</h2>
+          <p>아래 버튼을 누르고 알림을 허용하면 됩니다. 홈 화면에 추가하면 더 안정적입니다.</p>
+        </section>
+      )}
+
+      <button type="button" onClick={() => void enable()}>알림 켜기</button>
+      {status && <p>{status}</p>}
+    </div>
+  )
 }
