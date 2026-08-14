@@ -42,20 +42,32 @@ export function useAccounts() {
   const [servers, setServers] = useState<ServerRow[]>([])
   const [accounts, setAccounts] = useState<AccountRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
-    const [s, a] = await Promise.all([
-      supabase.from('servers').select('*').order('sort_order'),
-      supabase.from('accounts').select('*').order('sort_order'),
-    ])
-    setServers((s.data ?? []) as ServerRow[])
-    setAccounts((a.data ?? []) as AccountRow[])
-    setLoading(false)
+    try {
+      const [s, a] = await Promise.all([
+        supabase.from('servers').select('*').order('sort_order'),
+        supabase.from('accounts').select('*').order('sort_order'),
+      ])
+      const failed = s.error ?? a.error
+      if (failed) {
+        setError('데이터를 불러오지 못했습니다. 연결을 확인해 주세요.')
+      } else {
+        setError(null)
+        setServers((s.data ?? []) as ServerRow[])
+        setAccounts((a.data ?? []) as AccountRow[])
+      }
+    } catch {
+      setError('데이터를 불러오지 못했습니다. 연결을 확인해 주세요.')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { void reload() }, [reload])
 
-  return { servers, accounts, loading, reload }
+  return { servers, accounts, loading, error, reload }
 }
 
 async function currentUserId(): Promise<string> {

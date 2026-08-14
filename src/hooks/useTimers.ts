@@ -29,18 +29,29 @@ export interface StartTimerInput {
 export function useTimers(accountId?: string) {
   const [timers, setTimers] = useState<TimerRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
-    let q = supabase.from('timers').select('*').is('completed_at', null)
-    if (accountId) q = q.eq('account_id', accountId)
-    const { data } = await q.order('ends_at')
-    setTimers((data ?? []) as TimerRow[])
-    setLoading(false)
+    try {
+      let q = supabase.from('timers').select('*').is('completed_at', null)
+      if (accountId) q = q.eq('account_id', accountId)
+      const { data, error: queryError } = await q.order('ends_at')
+      if (queryError) {
+        setError('데이터를 불러오지 못했습니다. 연결을 확인해 주세요.')
+      } else {
+        setError(null)
+        setTimers((data ?? []) as TimerRow[])
+      }
+    } catch {
+      setError('데이터를 불러오지 못했습니다. 연결을 확인해 주세요.')
+    } finally {
+      setLoading(false)
+    }
   }, [accountId])
 
   useEffect(() => { void reload() }, [reload])
 
-  return { timers, loading, reload }
+  return { timers, loading, error, reload }
 }
 
 export async function startTimer(input: StartTimerInput): Promise<void> {
