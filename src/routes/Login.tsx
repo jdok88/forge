@@ -13,6 +13,19 @@ export function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [guestBusy, setGuestBusy] = useState(false)
+  const [guestError, setGuestError] = useState<string | null>(null)
+
+  async function startGuest() {
+    setGuestError(null)
+    setGuestBusy(true)
+    try {
+      const { error } = await supabase.auth.signInAnonymously()
+      if (error) setGuestError(translateError(error.message))
+    } finally {
+      setGuestBusy(false)
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -64,6 +77,19 @@ export function Login() {
           {mode === 'login' ? '계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'}
         </button>
       </p>
+
+      <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 'var(--sp-4) 0' }} />
+      <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)', textAlign: 'center' }}>또는</p>
+
+      <button type="button" disabled={guestBusy} onClick={() => void startGuest()}>
+        게스트로 시작
+      </button>
+      <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+        가입 없이 바로 사용할 수 있습니다. 다만 <strong>이 기기에서만</strong> 데이터가 유지되며,
+        브라우저 저장소를 지우거나 다른 기기에서 접속하면 복구할 수 없습니다.
+        나중에 설정에서 이메일을 등록하면 정식 계정으로 전환됩니다.
+      </p>
+      {guestError && <p role="alert" style={{ color: 'var(--danger)' }}>{guestError}</p>}
     </form>
   )
 }

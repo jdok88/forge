@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAccounts, createServer, createAccount, toConfig } from '../hooks/useAccounts'
 import { useTimers } from '../hooks/useTimers'
+import { useSession } from '../hooks/useSession'
 import { formatCountdown, formatDuration } from '../game/format'
 import { forgeDuration } from '../game/durations'
 import { resourceEta } from '../game/eta'
 import { subscribePush } from '../lib/push'
+import { supabase } from '../lib/supabase'
+import { GuestUpgradeBanner } from '../components/GuestUpgradeBanner'
 
 const KIND_ICON = { egg: '🥚', tech: '⚗️', forge: '⚒️' } as const
 
@@ -44,17 +47,32 @@ function NotificationBanner() {
   )
 }
 
+async function logout(isAnonymous: boolean) {
+  if (isAnonymous) {
+    const ok = window.confirm(
+      '게스트 계정입니다. 로그아웃하면 이 기기에 저장된 데이터를 복구할 수 없습니다. 계속하시겠습니까?'
+    )
+    if (!ok) return
+  }
+  await supabase.auth.signOut()
+}
+
 export function Home() {
   const { servers, accounts, loading, error, reload } = useAccounts()
   const { timers } = useTimers()
+  const { session } = useSession()
   const [serverName, setServerName] = useState('')
   const [nick, setNick] = useState<Record<string, string>>({})
 
   if (loading) return <p>불러오는 중…</p>
 
+  const anyUser = session?.user as unknown as { is_anonymous?: boolean } | undefined
+  const isAnonymous = anyUser?.is_anonymous ?? !session?.user.email
+
   return (
     <div>
       <h1>Forge 알람</h1>
+      <GuestUpgradeBanner />
       <NotificationBanner />
       <Link to="/install">알림이 안 오나요?</Link>
 
@@ -135,6 +153,8 @@ export function Home() {
           onChange={e => setServerName(e.target.value)} />
         <button type="submit">추가</button>
       </form>
+
+      <button type="button" onClick={() => void logout(isAnonymous)}>로그아웃</button>
     </div>
   )
 }
