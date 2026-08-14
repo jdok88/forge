@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom'
 import { useAccounts, createServer, createAccount, toConfig } from '../hooks/useAccounts'
 import { useTimers } from '../hooks/useTimers'
 import { useSession } from '../hooks/useSession'
-import { formatCountdown, formatDuration } from '../game/format'
+import { formatDuration } from '../game/format'
 import { forgeDuration } from '../game/durations'
 import { resourceEta } from '../game/eta'
 import { subscribePush, type PushFailure } from '../lib/push'
 import { supabase } from '../lib/supabase'
 import { GuestUpgradeBanner } from '../components/GuestUpgradeBanner'
 import { PushHelp } from '../components/PushHelp'
+import { Countdown } from '../components/Countdown'
 import { isInAppBrowser } from '../lib/browser'
 
 const KIND_ICON = { egg: '🥚', tech: '⚗️', forge: '⚒️' } as const
@@ -104,8 +105,8 @@ export function Home() {
             {list.map(a => {
               const mine = timers.filter(t => t.account_id === a.id)
               const soonest = mine
-                .map(t => Math.floor((new Date(t.ends_at).getTime() - Date.now()) / 1000))
-                .sort((x, y) => x - y)[0]
+                .slice()
+                .sort((x, y) => new Date(x.ends_at).getTime() - new Date(y.ends_at).getTime())[0]
 
               // 다음 대장간 레벨까지 골드 ETA
               let goldNote: string | null = null
@@ -134,7 +135,7 @@ export function Home() {
                       .join(' ') || '진행 중인 타이머 없음'}
                   </div>
                   {soonest !== undefined && (
-                    <div>가장 빠른 완료: {formatCountdown(soonest)}</div>
+                    <div>가장 빠른 완료: <Countdown endsAt={soonest.ends_at} /></div>
                   )}
                   {goldNote && (
                     <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>{goldNote}</div>
