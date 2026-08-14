@@ -50,7 +50,7 @@ Deno.serve(async () => {
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          JSON.stringify({ title, body, tag: t.id, url: `/account/${t.account_id}` }),
+          JSON.stringify({ title, body, tag: t.id, url: `account/${t.account_id}` }),
         )
         delivered++
       } catch (e) {

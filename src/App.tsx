@@ -14,7 +14,7 @@ export default function App() {
   if (!session) return <Login />
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/account/:id" element={<AccountDetail />} />
