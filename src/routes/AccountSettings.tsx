@@ -29,6 +29,7 @@ export function AccountSettings() {
   const { accounts, reload } = useAccounts()
   const [draft, setDraft] = useState<AccountRow | null>(null)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     const a = accounts.find(x => x.id === id)
@@ -43,15 +44,21 @@ export function AccountSettings() {
 
   async function save() {
     if (!draft) return
-    await updateAccount(draft.id, {
-      forge_speed_lv: draft.forge_speed_lv, forge_cost_lv: draft.forge_cost_lv,
-      tech_speed_lv: draft.tech_speed_lv, tech_cost_lv: draft.tech_cost_lv,
-      egg_speed_lv: draft.egg_speed_lv, forge_level: draft.forge_level,
-      gold_per_min: draft.gold_per_min, hammer_per_min: draft.hammer_per_min,
-      potion_per_day: draft.potion_per_day, nickname: draft.nickname,
-    })
-    await reload()
-    setSaved(true)
+    setSaveError(null)
+    try {
+      await updateAccount(draft.id, {
+        forge_speed_lv: draft.forge_speed_lv, forge_cost_lv: draft.forge_cost_lv,
+        tech_speed_lv: draft.tech_speed_lv, tech_cost_lv: draft.tech_cost_lv,
+        egg_speed_lv: draft.egg_speed_lv, forge_level: draft.forge_level,
+        gold_per_min: draft.gold_per_min, hammer_per_min: draft.hammer_per_min,
+        potion_per_day: draft.potion_per_day, nickname: draft.nickname,
+      })
+      await reload()
+      setSaved(true)
+    } catch (e) {
+      setSaved(false)
+      setSaveError(e instanceof Error ? e.message : '저장에 실패했습니다.')
+    }
   }
 
   const cfg = toConfig(draft)
@@ -67,7 +74,10 @@ export function AccountSettings() {
 
       <label>현재 대장간 레벨
         <input type="number" min={1} max={35} value={draft.forge_level}
-          onChange={e => set({ forge_level: Number(e.target.value) })} />
+          onChange={e => {
+            const v = Number(e.target.value)
+            set({ forge_level: Number.isFinite(v) ? Math.min(35, Math.max(1, Math.trunc(v))) : 1 })
+          }} />
       </label>
 
       <h2>단축·할인 노드 (0~25)</h2>
@@ -105,6 +115,7 @@ export function AccountSettings() {
 
       <button type="button" onClick={() => void save()}>저장</button>
       {saved && <span style={{ color: 'var(--success)' }}>저장됨</span>}
+      {saveError && <span style={{ color: 'var(--danger)' }}>{saveError}</span>}
     </div>
   )
 }
