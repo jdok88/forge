@@ -6,6 +6,9 @@ self.addEventListener('push', (event) => {
       body: payload.body,
       tag: payload.tag,          // 같은 타이머의 중복 알림을 병합
       renotify: false,
+      vibrate: payload.vibrate,
+      silent: payload.silent,
+      requireInteraction: false,
       data: { url: payload.url || '/' },
     })
   )
