@@ -66,7 +66,7 @@ export const TECH_NODES: readonly TechNode[] = [
   { id: 'pet_hp', branch: 'skill', name: '펫 체력 숙련', effect: '펫 보너스 체력 +2%/레벨' },
   { id: 'egg_timer_common', branch: 'skill', name: '일반 알 타이머', effect: '일반 알 부화 타이머 속도 +10%/레벨' },
   { id: 'egg_timer_rare', branch: 'skill', name: '희귀 알 타이머', effect: '희귀한 알 부화 타이머 속도 +10%/레벨' },
-  { id: 'egg_timer_epic', branch: 'skill', name: '에픽 알 타이머', effect: '에픽 알 부화 타이머 속도 +10%/레벨' },
+  { id: 'egg_timer_epic', branch: 'skill', name: '서사시 알 타이머', effect: '서사시 알 부화 타이머 속도 +10%/레벨' },
   { id: 'egg_timer_legendary', branch: 'skill', name: '전설의 알 타이머', effect: '전설 알 부화 타이머 속도 +10%/레벨' },
   { id: 'egg_timer_ultimate', branch: 'skill', name: '궁극의 알 타이머', effect: '궁극의 알 부화 타이머 속도 +10%/레벨' },
   { id: 'egg_timer_mythic', branch: 'skill', name: '신화의 알 타이머', effect: '신화 알 부화 타이머 속도 +10%/레벨' },

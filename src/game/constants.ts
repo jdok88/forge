@@ -7,7 +7,7 @@ export const RARITIES: readonly Rarity[] = [
 export const RARITY_LABEL: Record<Rarity, string> = {
   common: '일반',
   rare: '희귀',
-  epic: '에픽',
+  epic: '서사시',
   legendary: '전설',
   ultimate: '궁극',
   mythic: '신화',
