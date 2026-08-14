@@ -17,10 +17,15 @@ const KIND_LABEL: Record<string, string> = {
 }
 
 Deno.serve(async () => {
+  const now = new Date()
+  // 24시간 넘게 발송 실패로 재시도 중인 타이머는 더 이상 의미가 없으므로 스캔에서 제외한다.
+  const giveUpBefore = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+
   const { data: due, error } = await admin
     .from('timers')
     .select('id, user_id, account_id, kind, meta, accounts(nickname, servers(name))')
-    .lte('ends_at', new Date().toISOString())
+    .lte('ends_at', now.toISOString())
+    .gte('ends_at', giveUpBefore)
     .is('notified_at', null)
     .is('completed_at', null)
     .limit(500)
@@ -39,25 +44,35 @@ Deno.serve(async () => {
       .select('id, endpoint, p256dh, auth')
       .eq('user_id', t.user_id)
 
+    let delivered = 0
+    let gone = 0
     for (const s of subs ?? []) {
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
           JSON.stringify({ title, body, tag: t.id, url: `/account/${t.account_id}` }),
         )
-        sent++
+        delivered++
       } catch (e) {
         // 410 Gone / 404 = 만료된 구독. 정리한다.
         const status = (e as { statusCode?: number }).statusCode
         if (status === 404 || status === 410) {
           await admin.from('push_subscriptions').delete().eq('id', s.id)
+          gone++
         }
+        // 그 외 오류는 일시적일 수 있으므로 notified_at 을 찍지 않고 다음 틱에 재시도한다
       }
     }
 
-    await admin.from('timers')
-      .update({ notified_at: new Date().toISOString() })
-      .eq('id', t.id)
+    // 보낼 구독이 아예 없거나(보낼 곳 없음), 하나라도 성공했거나,
+    // 남은 구독이 전부 만료(404/410)로 정리된 경우에만 발송 완료로 표시한다.
+    const nothingLeftToRetry = (subs?.length ?? 0) === 0 || delivered > 0 || gone === (subs?.length ?? 0)
+    if (nothingLeftToRetry) {
+      await admin.from('timers')
+        .update({ notified_at: new Date().toISOString() })
+        .eq('id', t.id)
+      sent += delivered
+    }
   }
 
   return Response.json({ sent, timers: due.length })
