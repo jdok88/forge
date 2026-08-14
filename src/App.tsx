@@ -6,6 +6,7 @@ import { Home } from './routes/Home'
 import { AccountDetail } from './routes/AccountDetail'
 import { AccountSettings } from './routes/AccountSettings'
 import { InstallGuide } from './routes/InstallGuide'
+import { NotificationSettings } from './routes/NotificationSettings'
 
 export default function App() {
   const { session, loading } = useSession()
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/account/:id" element={<AccountDetail />} />
         <Route path="/account/:id/settings" element={<AccountSettings />} />
         <Route path="/install" element={<InstallGuide />} />
+        <Route path="/notifications" element={<NotificationSettings />} />
       </Routes>
     </BrowserRouter>
   )

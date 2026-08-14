@@ -94,6 +94,8 @@ export function Home() {
       <GuestUpgradeBanner />
       <NotificationBanner />
       <Link to="/install">알림이 안 오나요?</Link>
+      {' · '}
+      <Link to="/notifications">알림 설정</Link>
 
       {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
 
