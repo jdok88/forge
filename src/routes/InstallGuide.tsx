@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { subscribePush } from '../lib/push'
 
-const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
+const isIos = () =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  // iPadOS 13+ 는 기본으로 데스크톱 UA(Macintosh)를 보고한다.
+  // 터치 포인트 수로 실제 아이패드를 구분한다.
+  (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
 const isStandalone = () =>
   window.matchMedia('(display-mode: standalone)').matches ||
   // iOS Safari 전용 플래그
@@ -31,6 +35,10 @@ export function InstallGuide() {
           <p>
             iOS는 <strong>홈 화면에 추가</strong>한 뒤에만 알림을 받을 수 있습니다.
             (브라우저 탭 상태로는 불가능합니다)
+          </p>
+          <p>
+            <strong>Safari 에서 열어야 합니다.</strong> Chrome·Firefox 등 다른 브라우저에서는
+            홈 화면에 추가해도 알림을 받을 수 없습니다.
           </p>
           <ol>
             <li>Safari 하단의 <strong>공유</strong> 버튼을 누릅니다</li>

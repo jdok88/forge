@@ -2,8 +2,15 @@ import { useEffect, useRef } from 'react'
 import { useTimers } from './useTimers'
 
 export function useForegroundAlarm() {
-  const { timers } = useTimers()
+  const { timers, reload } = useTimers()
   const fired = useRef<Set<string>>(new Set())
+
+  // useTimers 는 최초 1회만 조회한다. 앱이 열려 있는 동안 새로 시작된 타이머를
+  // 예약하려면 주기적으로 다시 읽어야 한다. 30초면 8분짜리 알도 넉넉히 앞서 잡힌다.
+  useEffect(() => {
+    const id = window.setInterval(() => { void reload() }, 30_000)
+    return () => clearInterval(id)
+  }, [reload])
 
   useEffect(() => {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
