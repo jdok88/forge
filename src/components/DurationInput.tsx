@@ -1,5 +1,6 @@
 import { formatDuration } from '../game/format'
 import { Button } from './ui/Button'
+import { Field } from './ui/Field'
 
 export function splitDuration(sec: number): { d: number; h: number; m: number } {
   if (sec <= 0) return { d: 0, h: 0, m: 0 }
@@ -23,6 +24,10 @@ interface Props {
   onChange: (sec: number) => void
 }
 
+const DAY_OPTIONS = Array.from({ length: 11 }, (_, i) => i)
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => i)
+const MIN_OPTIONS = Array.from({ length: 60 }, (_, i) => i)
+
 export function DurationInput({ value, autoSec, onChange }: Props) {
   const parts = splitDuration(value)
   const set = (k: 'd' | 'h' | 'm', v: string) =>
@@ -31,19 +36,27 @@ export function DurationInput({ value, autoSec, onChange }: Props) {
   return (
     <div>
       <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
-        {(['d', 'h', 'm'] as const).map(k => (
-          <label key={k} style={{ flex: 1 }}>
-            <input
-              type="number" min={0} inputMode="numeric"
-              value={parts[k]}
-              onChange={e => set(k, e.target.value)}
-              style={{ width: '100%' }}
-            />
-            <span style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
-              {k === 'd' ? '일' : k === 'h' ? '시간' : '분'}
-            </span>
-          </label>
-        ))}
+        <div style={{ flex: 1 }}>
+          <Field label="일">
+            <select value={parts.d} onChange={e => set('d', e.target.value)}>
+              {DAY_OPTIONS.map(n => <option key={n} value={n}>{n}일</option>)}
+            </select>
+          </Field>
+        </div>
+        <div style={{ flex: 1 }}>
+          <Field label="시간">
+            <select value={parts.h} onChange={e => set('h', e.target.value)}>
+              {HOUR_OPTIONS.map(n => <option key={n} value={n}>{n}시간</option>)}
+            </select>
+          </Field>
+        </div>
+        <div style={{ flex: 1 }}>
+          <Field label="분">
+            <select value={parts.m} onChange={e => set('m', e.target.value)}>
+              {MIN_OPTIONS.map(n => <option key={n} value={n}>{n}분</option>)}
+            </select>
+          </Field>
+        </div>
       </div>
 
       {value !== autoSec && (
