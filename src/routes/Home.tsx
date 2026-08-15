@@ -39,7 +39,7 @@ function timerLabel(t: TimerRow): string {
 
 /** cfg 를 주면(진행 중인 타이머만) 다음 단계 안내를 그 아래 작은 글씨로 덧붙인다 */
 function TimerLine({ t, cfg }: { t: TimerRow; cfg?: AccountConfig }) {
-  const nextLine = cfg ? nextStepLine(t, cfg) : null
+  const info = cfg ? nextStepLine(t, cfg) : null
   return (
     <div style={{ padding: 'var(--sp-1) 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
@@ -47,9 +47,10 @@ function TimerLine({ t, cfg }: { t: TimerRow; cfg?: AccountConfig }) {
         <span style={{ flex: 1, fontSize: 'var(--fs-sm)' }}>{timerLabel(t)}</span>
         <Countdown endsAt={t.ends_at} />
       </div>
-      {nextLine && (
-        <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)', paddingLeft: 'calc(1em + var(--sp-2))' }}>
-          {nextLine}
+      {info && (
+        <div style={{ fontSize: 'var(--fs-sm)', paddingLeft: 'calc(1em + var(--sp-2))' }}>
+          <div style={{ color: 'var(--text-dim)' }}>{info.lead}</div>
+          {info.detail && <div style={{ color: 'var(--text)' }}>{info.detail}</div>}
         </div>
       )}
     </div>

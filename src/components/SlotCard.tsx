@@ -121,9 +121,12 @@ export function SlotCard({
         </div>
       )}
       {!awaitingConfirm && cfg && (() => {
-        const line = nextStepLine(timer, cfg)
-        return line && (
-          <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>{line}</div>
+        const info = nextStepLine(timer, cfg)
+        return info && (
+          <div style={{ fontSize: 'var(--fs-sm)' }}>
+            <div style={{ color: 'var(--text-dim)' }}>{info.lead}</div>
+            {info.detail && <div style={{ color: 'var(--text)' }}>{info.detail}</div>}
+          </div>
         )
       })()}
       <div style={{ display: 'flex', gap: 'var(--sp-2)', marginTop: 'var(--sp-2)' }}>

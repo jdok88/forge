@@ -15,26 +15,32 @@ describe('nextStepLine', () => {
 
   it('기술: 같은 티어 안에서는 서브레벨만 올린다', () => {
     const line = nextStepLine({ kind: 'tech', meta: { nodeId: 'forge_timer', tier: 1, level: 4 } }, VANILLA)
-    expect(line).toBe('다음: 제련 타이머 I 5/5 · 물약 115 · 1시간 20분')
+    expect(line).toEqual({
+      lead: '다음에도 같은 기술을 올리려면',
+      detail: '제련 타이머 I 5/5 · 물약 115 · 1시간 20분',
+    })
   })
 
   it('기술: 서브레벨 5에서는 다음 티어로 넘어간다', () => {
     const line = nextStepLine({ kind: 'tech', meta: { nodeId: 'forge_timer', tier: 1, level: 5 } }, VANILLA)
-    expect(line).toContain('제련 타이머 II 1/5')
+    expect(line?.detail).toContain('제련 타이머 II 1/5')
   })
 
   it('기술: 티어 V 5/5 는 노드 최대', () => {
     const line = nextStepLine({ kind: 'tech', meta: { nodeId: 'forge_timer', tier: 5, level: 5 } }, VANILLA)
-    expect(line).toBe('다음: 노드 최대')
+    expect(line).toEqual({ lead: '이 기술은 최대 단계입니다.' })
   })
 
   it('대장간: 다음 레벨의 비용·시간을 보여준다', () => {
     const line = nextStepLine({ kind: 'forge', meta: { targetLevel: 12 } }, VANILLA)
-    expect(line).toBe('다음: 대장간 13레벨 · 골드 450,000 · 1일 16시간 53분')
+    expect(line).toEqual({
+      lead: '다음 레벨을 올리려면',
+      detail: '대장간 13레벨 · 골드 450,000 · 1일 16시간 53분',
+    })
   })
 
   it('대장간: 목표가 35(최대)면 승천 안내로 대체한다', () => {
     const line = nextStepLine({ kind: 'forge', meta: { targetLevel: 35 } }, VANILLA)
-    expect(line).toBe('다음: 최대 레벨 (승천 필요)')
+    expect(line).toEqual({ lead: '대장간 최대 레벨입니다. 승천이 필요합니다.' })
   })
 })
