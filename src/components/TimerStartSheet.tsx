@@ -9,6 +9,7 @@ import { toConfig, type AccountRow } from '../hooks/useAccounts'
 import { subscribePush } from '../lib/push'
 import { useNotificationStatus } from '../hooks/useNotificationStatus'
 import { Button } from './ui/Button'
+import { GameIcon } from './ui/GameIcon'
 import type { Rarity } from '../game/types'
 
 const TIER_LABEL = ['I', 'II', 'III', 'IV', 'V'] as const
@@ -121,8 +122,12 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
                     background: rarity === r ? `var(--rarity-${r})` : 'transparent',
                     color: rarity === r ? 'var(--bg)' : 'var(--text)',
                     fontWeight: rarity === r ? 700 : 400,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 'var(--sp-1)',
                   }}
                 >
+                  <GameIcon icon={{ kind: 'egg', rarity: r }} alt={`${RARITY_LABEL[r]} 알`} size="sm" />
                   {RARITY_LABEL[r]}
                 </button>
               ))}
@@ -133,6 +138,16 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
         {kind === 'tech' && (
           <fieldset>
             <legend>기술</legend>
+            {(() => {
+              const node = TECH_NODES.find(n => n.id === nodeId)
+              const branch = node?.branch ?? 'skill'
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginBottom: 'var(--sp-2)' }}>
+                  <GameIcon icon={{ kind: 'tree', branch }} alt={`${BRANCH_LABEL[branch]} 기술`} size="sm" />
+                  <span style={{ color: 'var(--text-dim)' }}>{BRANCH_LABEL[branch]}</span>
+                </div>
+              )
+            })()}
             <select value={nodeId} onChange={e => setNodeId(e.target.value)}>
               {TECH_NODES.map(n => (
                 <option key={n.id} value={n.id}>

@@ -96,6 +96,35 @@
   font-weight: 700;
 }
 
+.ui-game-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--icon-tile-bg);
+  border-radius: var(--r-sm);
+  border-width: 2px;
+  border-style: solid;
+  overflow: hidden;
+}
+
+.ui-game-icon--sm {
+  width: 32px;
+  height: 32px;
+}
+
+.ui-game-icon--md {
+  width: 44px;
+  height: 44px;
+}
+
+.ui-game-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .ui-empty-state {
   display: flex;
   flex-direction: column;

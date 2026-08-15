@@ -24,6 +24,14 @@
   --rarity-ultimate: #f56b6b;
   --rarity-mythic: #b06bf5;
 
+  /* 기술 브랜치 */
+  --branch-forge: #f5a34c;
+  --branch-power: #f56b8f;
+  --branch-skill: #6bcaf5;
+
+  /* 아이콘 타일 — 게임 아트 자체가 거의 흰 배경이라 다크 테마에서도 밝은 대지를 깔아준다 */
+  --icon-tile-bg: #eceae4;
+
   /* 간격 */
   --sp-1: 4px;
   --sp-2: 8px;

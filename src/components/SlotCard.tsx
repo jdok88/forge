@@ -4,6 +4,7 @@ import { RARITY_LABEL } from '../game/constants'
 import { TECH_NODES } from '../game/nodes'
 import { Card } from './ui/Card'
 import { Button } from './ui/Button'
+import { GameIcon, type GameIconSpec } from './ui/GameIcon'
 import type { TimerRow } from '../hooks/useTimers'
 import type { Rarity } from '../game/types'
 
@@ -16,6 +17,15 @@ function describe(t: TimerRow): string {
     return `${node?.name ?? '기술'} ${TIER_LABEL[(t.meta.tier as number) - 1]} ${t.meta.level}/5`
   }
   return `대장간 → ${t.meta.targetLevel}`
+}
+
+function iconOf(t: TimerRow): GameIconSpec {
+  if (t.kind === 'egg') return { kind: 'egg', rarity: t.meta.rarity as Rarity }
+  if (t.kind === 'tech') {
+    const node = TECH_NODES.find(n => n.id === t.meta.nodeId)
+    return { kind: 'tree', branch: node?.branch ?? 'skill' }
+  }
+  return { kind: 'forge' }
 }
 
 interface Props {
@@ -42,8 +52,13 @@ export function SlotCard({ label, timer, onStart, onComplete, onCancel, onElapse
 
   return (
     <Card style={{ marginBottom: 'var(--sp-2)' }}>
-      <div style={{ color: 'var(--text-dim)' }}>{label}</div>
-      <div>{describe(timer)}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+        <GameIcon icon={iconOf(timer)} alt={describe(timer)} size="sm" />
+        <div>
+          <div style={{ color: 'var(--text-dim)' }}>{label}</div>
+          <div>{describe(timer)}</div>
+        </div>
+      </div>
       <Countdown endsAt={timer.ends_at} onElapsed={onElapsed} />
       {remain > 0 && (
         <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
