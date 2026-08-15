@@ -125,6 +125,40 @@
   display: block;
 }
 
+.ui-tabbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  margin: 0 0 var(--sp-3) 0;
+}
+
+.ui-tabbar__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: var(--sp-3) var(--sp-1);
+  font: inherit;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.ui-tabbar__btn--active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
 .ui-empty-state {
   display: flex;
   flex-direction: column;
