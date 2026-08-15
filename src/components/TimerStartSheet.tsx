@@ -8,6 +8,7 @@ import { startTimer, type TimerKind } from '../hooks/useTimers'
 import { toConfig, type AccountRow } from '../hooks/useAccounts'
 import { subscribePush } from '../lib/push'
 import { useNotificationStatus } from '../hooks/useNotificationStatus'
+import { Button } from './ui/Button'
 import type { Rarity } from '../game/types'
 
 const TIER_LABEL = ['I', 'II', 'III', 'IV', 'V'] as const
@@ -97,6 +98,7 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
         style={{
           background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 'var(--sp-4)',
           width: '100%', maxWidth: '520px', maxHeight: '85vh', overflowY: 'auto',
+          boxShadow: 'var(--shadow-3)',
         }}
       >
         <h2>{title}</h2>
@@ -178,13 +180,13 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
             {notifActive === false && (
               <p style={{ color: 'var(--danger)' }}>
                 알림이 꺼져 있어 완료 시 알림을 받을 수 없습니다.{' '}
-                <button type="button" onClick={() => void enableNotifications()}>알림 켜기</button>
+                <Button size="sm" onClick={() => void enableNotifications()}>알림 켜기</Button>
               </p>
             )}
-            <button type="button" onClick={submit} disabled={busy || sec <= 0}>시작</button>
+            <Button variant="primary" onClick={submit} disabled={busy || sec <= 0}>시작</Button>
           </>
         )}
-        <button type="button" onClick={onCancel}>취소</button>
+        <Button variant="ghost" onClick={onCancel}>취소</Button>
         {error && <p role="alert" style={{ color: 'var(--danger)' }}>{error}</p>}
       </div>
     </div>

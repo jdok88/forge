@@ -4,6 +4,7 @@ import { useAccounts, updateAccount, toConfig, type AccountRow } from '../hooks/
 import { RARITIES, RARITY_LABEL, RATE_PER_LEVEL, MAX_NODE_LEVEL } from '../game/constants'
 import { eggHatchSec } from '../game/durations'
 import { formatDuration } from '../game/format'
+import { Button } from '../components/ui/Button'
 import type { Rarity } from '../game/types'
 
 function LevelRow({ label, value, ratePct, onChange, note }: {
@@ -14,9 +15,9 @@ function LevelRow({ label, value, ratePct, onChange, note }: {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginBottom: 'var(--sp-2)' }}>
       <span style={{ flex: 1 }}>{label}</span>
-      <button type="button" onClick={() => onChange(Math.max(0, value - 1))}>−</button>
+      <Button size="sm" onClick={() => onChange(Math.max(0, value - 1))}>−</Button>
       <span style={{ minWidth: '2.5em', textAlign: 'center' }}>{value}</span>
-      <button type="button" onClick={() => onChange(Math.min(MAX_NODE_LEVEL, value + 1))}>+</button>
+      <Button size="sm" onClick={() => onChange(Math.min(MAX_NODE_LEVEL, value + 1))}>+</Button>
       <span style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)', minWidth: '9em' }}>
         {total > 0 ? `${total}%` : '—'} {note}
       </span>
@@ -113,7 +114,7 @@ export function AccountSettings() {
           onChange={e => set({ potion_per_day: e.target.value === '' ? null : Number(e.target.value) })} />
       </label>
 
-      <button type="button" onClick={() => void save()}>저장</button>
+      <Button variant="primary" onClick={() => void save()}>저장</Button>
       {saved && <span style={{ color: 'var(--success)' }}>저장됨</span>}
       {saveError && <span style={{ color: 'var(--danger)' }}>{saveError}</span>}
     </div>

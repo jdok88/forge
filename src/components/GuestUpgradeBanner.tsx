@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { Card } from './ui/Card'
+import { Button } from './ui/Button'
 
 function isAnonymous(session: Session | null): boolean {
   if (!session) return false
@@ -59,10 +61,7 @@ export function GuestUpgradeBanner() {
   }
 
   return (
-    <div style={{
-      background: 'var(--surface-2)', border: '1px solid var(--border)',
-      borderRadius: 'var(--r-md)', padding: 'var(--sp-3)', marginBottom: 'var(--sp-3)',
-    }}>
+    <Card style={{ marginBottom: 'var(--sp-3)' }}>
       {done ? (
         <p>계정이 만들어졌습니다. 이제 다른 기기에서도 로그인할 수 있습니다.</p>
       ) : (
@@ -73,7 +72,7 @@ export function GuestUpgradeBanner() {
             정식 계정으로 전환됩니다.
           </p>
           {!expanded && (
-            <button type="button" onClick={() => setExpanded(true)}>계정 만들기</button>
+            <Button onClick={() => setExpanded(true)}>계정 만들기</Button>
           )}
           {expanded && (
             <form onSubmit={submit}>
@@ -87,12 +86,12 @@ export function GuestUpgradeBanner() {
                 autoComplete="new-password"
                 onChange={e => setPassword(e.target.value)}
               />
-              <button type="submit" disabled={busy}>계정 만들기</button>
+              <Button type="submit" variant="primary" disabled={busy}>계정 만들기</Button>
               {error && <p role="alert" style={{ color: 'var(--danger)' }}>{error}</p>}
             </form>
           )}
         </>
       )}
-    </div>
+    </Card>
   )
 }

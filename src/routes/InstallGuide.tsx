@@ -4,6 +4,8 @@ import { subscribePush, type PushFailure } from '../lib/push'
 import { isIos } from '../lib/browser'
 import { PushHelp } from '../components/PushHelp'
 import { supabase } from '../lib/supabase'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
 
 const isStandalone = () =>
   window.matchMedia('(display-mode: standalone)').matches ||
@@ -127,7 +129,7 @@ export function InstallGuide() {
       <h1>알림 설정</h1>
 
       {isIos() && !isStandalone() && (
-        <section style={{ background: 'var(--surface-2)', padding: 'var(--sp-4)', borderRadius: 'var(--r-md)' }}>
+        <Card style={{ marginBottom: 'var(--sp-3)' }}>
           <h2>iPhone / iPad</h2>
           <p>
             iOS는 <strong>홈 화면에 추가</strong>한 뒤에만 알림을 받을 수 있습니다.
@@ -143,14 +145,14 @@ export function InstallGuide() {
             <li>홈 화면에 생긴 아이콘으로 앱을 다시 엽니다</li>
             <li>이 화면에서 <strong>알림 켜기</strong>를 누릅니다</li>
           </ol>
-        </section>
+        </Card>
       )}
 
       {isIos() && isStandalone() && (
-        <section style={{ background: 'var(--surface-2)', padding: 'var(--sp-4)', borderRadius: 'var(--r-md)' }}>
+        <Card style={{ marginBottom: 'var(--sp-3)' }}>
           <h2>iPhone / iPad</h2>
           <p>이미 홈 화면에 추가된 상태입니다. 아래 버튼으로 알림을 켜세요.</p>
-        </section>
+        </Card>
       )}
 
       {!isIos() && (
@@ -160,7 +162,7 @@ export function InstallGuide() {
         </section>
       )}
 
-      <button type="button" onClick={() => void enable()} disabled={busy}>알림 켜기</button>
+      <Button variant="primary" onClick={() => void enable()} disabled={busy}>알림 켜기</Button>
       {okMessage && <p>{okMessage}</p>}
       {reason && <PushHelp reason={reason} detail={detail} />}
 

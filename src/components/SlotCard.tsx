@@ -2,6 +2,8 @@ import { Countdown } from './Countdown'
 import { gemsToSkip } from '../game/formulas'
 import { RARITY_LABEL } from '../game/constants'
 import { TECH_NODES } from '../game/nodes'
+import { Card } from './ui/Card'
+import { Button } from './ui/Button'
 import type { TimerRow } from '../hooks/useTimers'
 import type { Rarity } from '../game/types'
 
@@ -28,18 +30,18 @@ interface Props {
 export function SlotCard({ label, timer, onStart, onComplete, onCancel, onElapsed }: Props) {
   if (!timer) {
     return (
-      <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: 'var(--sp-3)' }}>
+      <Card style={{ marginBottom: 'var(--sp-2)' }}>
         <div style={{ color: 'var(--text-dim)' }}>{label}</div>
         <div style={{ color: 'var(--text-dim)' }}>비어 있음</div>
-        <button type="button" onClick={onStart}>시작</button>
-      </div>
+        <Button onClick={onStart}>시작</Button>
+      </Card>
     )
   }
 
   const remain = Math.floor((new Date(timer.ends_at).getTime() - Date.now()) / 1000)
 
   return (
-    <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: 'var(--sp-3)' }}>
+    <Card style={{ marginBottom: 'var(--sp-2)' }}>
       <div style={{ color: 'var(--text-dim)' }}>{label}</div>
       <div>{describe(timer)}</div>
       <Countdown endsAt={timer.ends_at} onElapsed={onElapsed} />
@@ -48,8 +50,10 @@ export function SlotCard({ label, timer, onStart, onComplete, onCancel, onElapse
           즉시완료 젬 {gemsToSkip(remain).toLocaleString()}
         </div>
       )}
-      <button type="button" onClick={() => onComplete(timer.id)}>완료</button>
-      <button type="button" onClick={() => onCancel(timer.id)}>취소</button>
-    </div>
+      <div style={{ display: 'flex', gap: 'var(--sp-2)', marginTop: 'var(--sp-2)' }}>
+        <Button variant="primary" size="sm" onClick={() => onComplete(timer.id)}>완료</Button>
+        <Button variant="danger" size="sm" onClick={() => onCancel(timer.id)}>취소</Button>
+      </div>
+    </Card>
   )
 }

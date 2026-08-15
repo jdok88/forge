@@ -3,6 +3,7 @@
   --bg: #14161c;
   --surface: #1c1f28;
   --surface-2: #252936;
+  --surface-3: #2e3342;
   --border: #333949;
 
   /* 텍스트 */
@@ -11,6 +12,7 @@
 
   /* 강조 */
   --accent: #7c8cff;
+  --accent-ink: #14161c;
   --danger: #ff6b6b;
   --success: #4ade80;
 
@@ -34,9 +36,19 @@
   --r-sm: 6px;
   --r-md: 10px;
   --r-lg: 16px;
+  --r-pill: 999px;
+
+  /* 고도감 — 어두운 배경 위 카드/시트 구분용 */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.32);
+  --shadow-3: 0 12px 28px rgba(0, 0, 0, 0.4);
+
+  /* 포커스 */
+  --focus-ring: 0 0 0 3px rgba(124, 140, 255, 0.45);
 
   /* 타이포 */
   --font: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --fs-xs: 11px;
   --fs-sm: 13px;
   --fs-md: 15px;
   --fs-lg: 18px;
@@ -56,6 +68,11 @@ body {
   margin-inline: auto;
   padding: var(--sp-4);
   padding-bottom: var(--sp-6);
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, input, select, a {
+  touch-action: manipulation;
 }
 
 button {
@@ -66,11 +83,20 @@ button {
   padding: var(--sp-2) var(--sp-3);
   font: inherit;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 input, select {

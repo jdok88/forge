@@ -1,4 +1,5 @@
 import { formatDuration } from '../game/format'
+import { Button } from './ui/Button'
 
 export function splitDuration(sec: number): { d: number; h: number; m: number } {
   if (sec <= 0) return { d: 0, h: 0, m: 0 }
@@ -48,7 +49,7 @@ export function DurationInput({ value, autoSec, onChange }: Props) {
       {value !== autoSec && (
         <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
           자동 계산: {formatDuration(autoSec)}
-          <button type="button" onClick={() => onChange(autoSec)}>되돌리기</button>
+          <Button size="sm" onClick={() => onChange(autoSec)}>되돌리기</Button>
         </p>
       )}
     </div>

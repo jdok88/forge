@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { Button } from '../components/ui/Button'
 
 function translateError(message: string): string {
   if (message === 'Invalid login credentials') return '이메일 또는 비밀번호가 올바르지 않습니다.'
@@ -65,25 +66,25 @@ export function Login() {
         autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
         onChange={e => setPassword(e.target.value)}
       />
-      <button type="submit" disabled={busy}>
+      <Button type="submit" variant="primary" disabled={busy}>
         {mode === 'login' ? '로그인' : '회원가입'}
-      </button>
+      </Button>
       {error && <p role="alert" style={{ color: 'var(--danger)' }}>{error}</p>}
       <p>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null) }}
         >
           {mode === 'login' ? '계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'}
-        </button>
+        </Button>
       </p>
 
       <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 'var(--sp-4) 0' }} />
       <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)', textAlign: 'center' }}>또는</p>
 
-      <button type="button" disabled={guestBusy} onClick={() => void startGuest()}>
+      <Button disabled={guestBusy} onClick={() => void startGuest()}>
         게스트로 시작
-      </button>
+      </Button>
       <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
         가입 없이 바로 사용할 수 있습니다. 다만 <strong>이 기기에서만</strong> 데이터가 유지되며,
         브라우저 저장소를 지우거나 다른 기기에서 접속하면 복구할 수 없습니다.

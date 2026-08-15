@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { Button } from '../components/ui/Button'
 
 interface Prefs {
   pre_alert_min: number
@@ -124,7 +125,7 @@ export function NotificationSettings() {
             </label>
           </section>
 
-          <button type="button" onClick={() => void save()} disabled={busy}>저장</button>
+          <Button variant="primary" onClick={() => void save()} disabled={busy}>저장</Button>
           {saved && <span style={{ color: 'var(--success)' }}>저장됨</span>}
           {saveError && <span style={{ color: 'var(--danger)' }}>{saveError}</span>}
         </>
