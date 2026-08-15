@@ -17,6 +17,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # Releases 에 APK 를 올리기 위해 필요
     steps:
       - uses: actions/checkout@v4
 
@@ -72,3 +74,23 @@ jobs:
           name: forge-alarm-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      # 제3자가 로그인 없이 받을 수 있도록 Releases 에 고정 주소로 올린다.
+      # 아티팩트는 90일 뒤 만료되고 GitHub 로그인을 요구해 배포용으로 못 쓴다.
+      - name: Releases 에 최신 APK 게시
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Forge 알람 (최신)
+          body: |
+            안드로이드 앱 최신 빌드입니다.
+
+            **설치 방법**
+            1. 아래 `app-debug.apk` 를 폰에서 다운로드
+            2. 파일을 탭하면 "출처를 알 수 없는 앱" 경고가 뜹니다 — 설정에서 허용하고 설치
+            3. Play 스토어를 거치지 않은 앱이라 나오는 정상적인 경고입니다
+
+            웹 버전: https://forgealarm.pages.dev
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          make_latest: true
