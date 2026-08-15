@@ -188,12 +188,11 @@ export function Home() {
                   <Link to={`/account/${a.id}`} className="ui-account-link">
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
-                      paddingRight: 'calc(var(--sp-6) + var(--sp-5))',
+                      paddingRight: 'calc(var(--sp-6) * 3)',
                     }}>
                       <span style={{ flex: 1, color: a.color, fontWeight: 700, fontSize: 'var(--fs-md)' }}>
                         {a.nickname}
                       </span>
-                      <span style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-xs)' }}>{s.name}</span>
                       <span style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-lg)', lineHeight: 1 }} aria-hidden="true">›</span>
                     </div>
 
@@ -231,7 +230,7 @@ export function Home() {
                     className="ui-account-settings-link"
                     onClick={e => e.stopPropagation()}
                   >
-                    설정
+                    계정별 상세설정
                   </Link>
                 </Card>
               )
