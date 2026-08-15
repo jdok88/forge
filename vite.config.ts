@@ -16,7 +16,7 @@ export default defineConfig({
       manifest: {
         name: 'Forge 알람',
         short_name: 'Forge',
-        description: 'Forge Master 타이머 알림 · by s54 skhy',
+        description: 'Forge Master 타이머 알림 · 제작자: s54 skhy',
         theme_color: '#14161c',
         background_color: '#14161c',
         display: 'standalone',
