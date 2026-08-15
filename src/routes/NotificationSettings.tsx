@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useIsAnonymous } from '../hooks/useIsAnonymous'
+import { GuestUpgradeForm } from '../components/GuestUpgradeForm'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
@@ -21,6 +23,28 @@ const DEFAULT_PREFS: Prefs = {
 
 const PRE_ALERT_MIN_OPTIONS = [0, 1, 3, 5, 10, 15, 30, 60, 120]
 const REMIND_HOURS_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1)
+
+/** 계정 섹션 — 로그인 화면 안내가 "추가기능 설정에서 전환"이라 말하는 실제 위치 */
+function AccountSection() {
+  const { anonymous, session, loading } = useIsAnonymous()
+
+  return (
+    <>
+      <SectionTitle>계정</SectionTitle>
+      <section>
+        {loading ? (
+          <p>불러오는 중…</p>
+        ) : anonymous ? (
+          <GuestUpgradeForm />
+        ) : (
+          <p>
+            <strong>{session?.user.email}</strong> 계정으로 로그인되어 있습니다. 데이터가 이 계정에 동기화됩니다.
+          </p>
+        )}
+      </section>
+    </>
+  )
+}
 
 export function NotificationSettings() {
   const [draft, setDraft] = useState<Prefs | null>(null)
@@ -88,6 +112,8 @@ export function NotificationSettings() {
 
       {loading && <p>불러오는 중…</p>}
       {loadError && <p style={{ color: 'var(--danger)' }}>{loadError}</p>}
+
+      <AccountSection />
 
       {draft && (
         <>

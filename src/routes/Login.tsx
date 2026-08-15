@@ -89,7 +89,7 @@ export function Login() {
       <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
         가입 없이 바로 사용할 수 있습니다. 다만 <strong>이 기기에서만</strong> 데이터가 유지되며,
         브라우저 저장소를 지우거나 다른 기기에서 접속하면 복구할 수 없습니다.
-        나중에 설정에서 이메일을 등록하면 정식 계정으로 전환됩니다.
+        나중에 추가기능 설정에서 이메일을 등록하면 정식 계정으로 전환됩니다.
       </p>
       {guestError && <p role="alert" style={{ color: 'var(--danger)' }}>{guestError}</p>}
     </form>
