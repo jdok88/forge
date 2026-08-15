@@ -12,12 +12,13 @@ import { TECH_NODES } from '../game/nodes'
 import type { AccountConfig, Rarity } from '../game/types'
 import { subscribePush, unsubscribePush, type PushFailure } from '../lib/push'
 import { isNative } from '../lib/nativeAlarm'
+import { APK_RELEASE_PAGE } from '../lib/appLinks'
 import { supabase } from '../lib/supabase'
 import { GuestUpgradeBanner } from '../components/GuestUpgradeBanner'
 import { PushHelp } from '../components/PushHelp'
 import { Countdown } from '../components/Countdown'
 import { timerIcon } from '../components/SlotCard'
-import { isInAppBrowser } from '../lib/browser'
+import { isInAppBrowser, isAndroid } from '../lib/browser'
 import { useNotificationStatus } from '../hooks/useNotificationStatus'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -55,6 +56,41 @@ function TimerLine({ t, cfg }: { t: TimerRow; cfg?: AccountConfig }) {
         </div>
       )}
     </div>
+  )
+}
+
+const INSTALL_NUDGE_DISMISSED_KEY = 'forge-install-nudge-dismissed'
+
+function InstallNudge() {
+  const [dismissed, setDismissed] = useState(
+    () => localStorage.getItem(INSTALL_NUDGE_DISMISSED_KEY) === '1'
+  )
+
+  if (dismissed || isNative() || !isAndroid()) return null
+
+  function dismiss() {
+    localStorage.setItem(INSTALL_NUDGE_DISMISSED_KEY, '1')
+    setDismissed(true)
+  }
+
+  return (
+    <Card style={{ border: '1px solid var(--accent)', marginBottom: 'var(--sp-4)' }}>
+      <p style={{ fontWeight: 700 }}>안드로이드 앱으로 더 정확하게</p>
+      <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+        앱을 설치하면 타이머가 끝나는 순간 바로 알림이 울립니다. 웹은 최대 10초 늦을 수 있습니다.
+      </p>
+      <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+        <a
+          href={APK_RELEASE_PAGE}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ui-btn ui-btn--primary"
+        >
+          앱 다운로드
+        </a>
+        <Button variant="ghost" onClick={dismiss}>나중에</Button>
+      </div>
+    </Card>
   )
 }
 
@@ -190,6 +226,7 @@ export function Home() {
       <h1>Forge 알람</h1>
       <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>제작자: s54 skhy</p>
       <GuestUpgradeBanner />
+      <InstallNudge />
       <NotificationBanner />
       <Link to="/install">알림이 안 오나요?</Link>
       {' · '}

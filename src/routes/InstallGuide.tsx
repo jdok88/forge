@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { subscribePush, type PushFailure } from '../lib/push'
 import { isNative } from '../lib/nativeAlarm'
-import { isIos } from '../lib/browser'
+import { isIos, isAndroid } from '../lib/browser'
+import { APK_RELEASE_PAGE } from '../lib/appLinks'
 import { PushHelp } from '../components/PushHelp'
 import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui/Card'
@@ -96,6 +97,40 @@ function Diagnostics() {
   )
 }
 
+interface PushEnableProps {
+  okMessage: string | null
+  reason: PushFailure | null
+  detail: string | undefined
+  busy: boolean
+  onEnable: () => void
+}
+
+function PushEnableSection({ okMessage, reason, detail, busy, onEnable }: PushEnableProps) {
+  return (
+    <>
+      <p style={{ color: 'var(--text-dim)' }}>
+        타이머가 완료되면 휴대폰 알림 창에 표시됩니다. 앱을 닫아도 옵니다.
+      </p>
+      <Button variant="primary" onClick={onEnable} disabled={busy}>푸시 알림 켜기</Button>
+      <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+        시계 알람처럼 크게 울리지는 않습니다. 기본 알림음이 울리며, 휴대폰의 알림 설정에 따라 무음일 수 있습니다.
+      </p>
+      {okMessage && <p>{okMessage}</p>}
+      {reason && <PushHelp reason={reason} detail={detail} />}
+    </>
+  )
+}
+
+function DiagnosticsSection() {
+  return (
+    <>
+      <h2>진단</h2>
+      <p style={{ color: 'var(--text-dim)' }}>알림이 안 온다고 느껴지면 아래 항목을 확인해 주세요.</p>
+      <Diagnostics />
+    </>
+  )
+}
+
 export function InstallGuide() {
   const [okMessage, setOkMessage] = useState<string | null>(null)
   const [reason, setReason] = useState<PushFailure | null>(null)
@@ -137,58 +172,90 @@ export function InstallGuide() {
     )
   }
 
+  const pushEnableProps: PushEnableProps = { okMessage, reason, detail, busy, onEnable: () => void enable() }
+
+  if (isIos()) {
+    return (
+      <div>
+        <Link to="/">← 홈</Link>
+        <h1>알림 설정</h1>
+
+        {!isStandalone() && (
+          <Card style={{ marginBottom: 'var(--sp-3)' }}>
+            <h2>iPhone / iPad</h2>
+            <p>
+              iOS는 <strong>홈 화면에 추가</strong>한 뒤에만 알림을 받을 수 있습니다.
+              (브라우저 탭 상태로는 불가능합니다)
+            </p>
+            <p>
+              <strong>Safari 에서 열어야 합니다.</strong> Chrome·Firefox 등 다른 브라우저에서는
+              홈 화면에 추가해도 알림을 받을 수 없습니다.
+            </p>
+            <ol>
+              <li>Safari 하단의 <strong>공유</strong> 버튼을 누릅니다</li>
+              <li><strong>홈 화면에 추가</strong>를 선택합니다</li>
+              <li>홈 화면에 생긴 아이콘으로 앱을 다시 엽니다</li>
+              <li>이 화면에서 <strong>푸시 알림 켜기</strong>를 누릅니다</li>
+            </ol>
+          </Card>
+        )}
+
+        {isStandalone() && (
+          <Card style={{ marginBottom: 'var(--sp-3)' }}>
+            <h2>iPhone / iPad</h2>
+            <p>이미 홈 화면에 추가된 상태입니다. 아래 버튼으로 알림을 켜세요.</p>
+          </Card>
+        )}
+
+        <p style={{ color: 'var(--text-dim)' }}>iOS 앱은 아직 없습니다. 웹으로 이용해 주세요.</p>
+
+        <PushEnableSection {...pushEnableProps} />
+        <DiagnosticsSection />
+      </div>
+    )
+  }
+
+  if (isAndroid()) {
+    return (
+      <div>
+        <Link to="/">← 홈</Link>
+        <h1>알림 설정</h1>
+
+        <Card style={{ marginBottom: 'var(--sp-3)', border: '1px solid var(--accent)' }}>
+          <h2>앱 설치 (권장)</h2>
+          <p style={{ color: 'var(--text-dim)' }}>
+            앱을 설치하면 타이머가 끝나는 순간 바로 알림이 울립니다. 웹은 최대 10초 늦을 수 있습니다.
+          </p>
+          <a
+            href={APK_RELEASE_PAGE}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ui-btn ui-btn--primary"
+          >
+            앱 다운로드
+          </a>
+        </Card>
+
+        <section>
+          <h2>웹으로 계속 사용</h2>
+          <p style={{ color: 'var(--text-dim)' }}>
+            아래 버튼을 누르고 알림을 허용하면 됩니다. 홈 화면에 추가하면 더 안정적입니다.
+          </p>
+          <PushEnableSection {...pushEnableProps} />
+        </section>
+
+        <DiagnosticsSection />
+      </div>
+    )
+  }
+
   return (
     <div>
       <Link to="/">← 홈</Link>
       <h1>알림 설정</h1>
 
-      {isIos() && !isStandalone() && (
-        <Card style={{ marginBottom: 'var(--sp-3)' }}>
-          <h2>iPhone / iPad</h2>
-          <p>
-            iOS는 <strong>홈 화면에 추가</strong>한 뒤에만 알림을 받을 수 있습니다.
-            (브라우저 탭 상태로는 불가능합니다)
-          </p>
-          <p>
-            <strong>Safari 에서 열어야 합니다.</strong> Chrome·Firefox 등 다른 브라우저에서는
-            홈 화면에 추가해도 알림을 받을 수 없습니다.
-          </p>
-          <ol>
-            <li>Safari 하단의 <strong>공유</strong> 버튼을 누릅니다</li>
-            <li><strong>홈 화면에 추가</strong>를 선택합니다</li>
-            <li>홈 화면에 생긴 아이콘으로 앱을 다시 엽니다</li>
-            <li>이 화면에서 <strong>푸시 알림 켜기</strong>를 누릅니다</li>
-          </ol>
-        </Card>
-      )}
-
-      {isIos() && isStandalone() && (
-        <Card style={{ marginBottom: 'var(--sp-3)' }}>
-          <h2>iPhone / iPad</h2>
-          <p>이미 홈 화면에 추가된 상태입니다. 아래 버튼으로 알림을 켜세요.</p>
-        </Card>
-      )}
-
-      {!isIos() && (
-        <section>
-          <h2>Android</h2>
-          <p>아래 버튼을 누르고 알림을 허용하면 됩니다. 홈 화면에 추가하면 더 안정적입니다.</p>
-        </section>
-      )}
-
-      <p style={{ color: 'var(--text-dim)' }}>
-        타이머가 완료되면 휴대폰 알림 창에 표시됩니다. 앱을 닫아도 옵니다.
-      </p>
-      <Button variant="primary" onClick={() => void enable()} disabled={busy}>푸시 알림 켜기</Button>
-      <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
-        시계 알람처럼 크게 울리지는 않습니다. 기본 알림음이 울리며, 휴대폰의 알림 설정에 따라 무음일 수 있습니다.
-      </p>
-      {okMessage && <p>{okMessage}</p>}
-      {reason && <PushHelp reason={reason} detail={detail} />}
-
-      <h2>진단</h2>
-      <p style={{ color: 'var(--text-dim)' }}>알림이 안 온다고 느껴지면 아래 항목을 확인해 주세요.</p>
-      <Diagnostics />
+      <PushEnableSection {...pushEnableProps} />
+      <DiagnosticsSection />
     </div>
   )
 }

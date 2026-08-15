@@ -21,3 +21,5 @@ export const isIos = () =>
   // iPadOS 13+ 는 기본으로 데스크톱 UA(Macintosh)를 보고한다.
   // 터치 포인트 수로 실제 아이패드를 구분한다.
   (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
+
+export const isAndroid = () => /Android/i.test(navigator.userAgent)
