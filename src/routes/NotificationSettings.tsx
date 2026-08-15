@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useIsAnonymous } from '../hooks/useIsAnonymous'
 import { GuestUpgradeForm } from '../components/GuestUpgradeForm'
@@ -24,6 +24,55 @@ const DEFAULT_PREFS: Prefs = {
 const PRE_ALERT_MIN_OPTIONS = [0, 1, 3, 5, 10, 15, 30, 60, 120]
 const REMIND_HOURS_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1)
 
+/**
+ * 탈퇴 확인 2단계 — window.confirm 대신 인라인으로 경고를 보여주고, 두 번째 탭에서만 RPC를 호출한다.
+ * 서버·타이머 개수는 이 페이지가 따로 불러오지 않으므로, 그걸 위해 새 네트워크 요청을 추가하는 대신
+ * 문구에서 개수를 빼는 쪽을 택했다.
+ */
+function WithdrawAccount({ anonymous }: { anonymous: boolean }) {
+  const navigate = useNavigate()
+  const [confirming, setConfirming] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function onWithdraw() {
+    setBusy(true)
+    setError(null)
+    try {
+      const { error } = await supabase.rpc('delete_own_account')
+      if (error) throw error
+      try {
+        await supabase.auth.signOut()
+      } catch {
+        // 계정이 이미 삭제돼 세션이 무효화된 상태 — signOut 실패는 무시하고 로그인 화면으로 보낸다
+      }
+      navigate('/')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '탈퇴에 실패했습니다.')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 'var(--sp-4)' }}>
+      <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '0 0 var(--sp-3)' }} />
+      {!confirming ? (
+        <Button variant="danger" onClick={() => setConfirming(true)}>회원탈퇴</Button>
+      ) : (
+        <div>
+          <p style={{ color: 'var(--danger)' }}>
+            계정과 등록된 모든 서버, 타이머, 알림 설정이 삭제됩니다. 되돌릴 수 없습니다.
+            {anonymous && <><br />게스트 계정은 복구할 방법이 없습니다.</>}
+          </p>
+          <Button variant="danger" onClick={() => void onWithdraw()} disabled={busy}>탈퇴</Button>{' '}
+          <Button variant="ghost" onClick={() => setConfirming(false)} disabled={busy}>취소</Button>
+          {error && <p role="alert" style={{ color: 'var(--danger)' }}>{error}</p>}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** 계정 섹션 — 로그인 화면 안내가 "추가기능 설정에서 전환"이라 말하는 실제 위치 */
 function AccountSection() {
   const { anonymous, session, loading } = useIsAnonymous()
@@ -41,6 +90,7 @@ function AccountSection() {
             <strong>{session?.user.email}</strong> 계정으로 로그인되어 있습니다. 데이터가 이 계정에 동기화됩니다.
           </p>
         )}
+        {!loading && <WithdrawAccount anonymous={anonymous} />}
       </section>
     </>
   )
