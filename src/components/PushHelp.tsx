@@ -56,7 +56,7 @@ export function PushHelp({ reason, detail }: Props) {
         <p style={{ color: 'var(--danger)' }}>브라우저에서 알림이 차단되어 있습니다.</p>
         <p style={{ color: 'var(--text-dim)' }}>
           주소창 왼쪽 자물쇠 아이콘 → <strong>알림</strong> → <strong>허용</strong> 으로 바꾼 뒤
-          다시 <strong>알림 켜기</strong>를 눌러 주세요.
+          다시 <strong>푸시 알림 켜기</strong>를 눌러 주세요.
         </p>
       </div>
     )

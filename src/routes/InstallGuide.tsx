@@ -106,7 +106,7 @@ export function InstallGuide() {
     try {
       const r = await subscribePush()
       if (r.ok) {
-        setOkMessage('알림이 켜졌습니다.')
+        setOkMessage('푸시 알림이 켜졌습니다.')
         setReason(null)
         setDetail(undefined)
       } else {
@@ -143,7 +143,7 @@ export function InstallGuide() {
             <li>Safari 하단의 <strong>공유</strong> 버튼을 누릅니다</li>
             <li><strong>홈 화면에 추가</strong>를 선택합니다</li>
             <li>홈 화면에 생긴 아이콘으로 앱을 다시 엽니다</li>
-            <li>이 화면에서 <strong>알림 켜기</strong>를 누릅니다</li>
+            <li>이 화면에서 <strong>푸시 알림 켜기</strong>를 누릅니다</li>
           </ol>
         </Card>
       )}
@@ -162,7 +162,13 @@ export function InstallGuide() {
         </section>
       )}
 
-      <Button variant="primary" onClick={() => void enable()} disabled={busy}>알림 켜기</Button>
+      <p style={{ color: 'var(--text-dim)' }}>
+        타이머가 완료되면 휴대폰 알림 창에 표시됩니다. 앱을 닫아도 옵니다.
+      </p>
+      <Button variant="primary" onClick={() => void enable()} disabled={busy}>푸시 알림 켜기</Button>
+      <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+        시계 알람처럼 크게 울리지는 않습니다. 기본 알림음이 울리며, 휴대폰의 알림 설정에 따라 무음일 수 있습니다.
+      </p>
       {okMessage && <p>{okMessage}</p>}
       {reason && <PushHelp reason={reason} detail={detail} />}
 

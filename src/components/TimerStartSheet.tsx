@@ -193,8 +193,8 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
             <p style={{ color: 'var(--text-dim)' }}>즉시완료 시 젬 {gemsToSkip(sec).toLocaleString()}</p>
             {notifActive === false && (
               <p style={{ color: 'var(--danger)' }}>
-                알림이 꺼져 있어 완료 시 알림을 받을 수 없습니다.{' '}
-                <Button size="sm" onClick={() => void enableNotifications()}>알림 켜기</Button>
+                푸시 알림이 꺼져 있어 완료돼도 알림 창에 표시되지 않습니다.{' '}
+                <Button size="sm" onClick={() => void enableNotifications()}>푸시 알림 켜기</Button>
               </p>
             )}
             <Button variant="primary" onClick={submit} disabled={busy || sec <= 0}>시작</Button>

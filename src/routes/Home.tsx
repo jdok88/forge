@@ -65,7 +65,7 @@ function NotificationBanner() {
     try {
       const r = await subscribePush()
       if (r.ok) {
-        setOkMessage('알림이 켜졌습니다.')
+        setOkMessage('푸시 알림이 켜졌습니다.')
         setReason(null)
         setDetail(undefined)
         refresh()
@@ -88,7 +88,7 @@ function NotificationBanner() {
       await unsubscribePush()
       refresh()
     } catch (e) {
-      setOffError(e instanceof Error ? e.message : '알림을 끄지 못했습니다.')
+      setOffError(e instanceof Error ? e.message : '푸시 알림을 끄지 못했습니다.')
     } finally {
       setBusy(false)
     }
@@ -97,8 +97,8 @@ function NotificationBanner() {
   if (active) {
     return (
       <div style={{ marginBottom: 'var(--sp-4)', fontSize: 'var(--fs-sm)' }}>
-        <span style={{ color: 'var(--text-dim)' }}>알림 켜짐</span>{' '}
-        <Button size="sm" onClick={() => void disable()} disabled={busy}>알림 끄기</Button>
+        <span style={{ color: 'var(--text-dim)' }}>푸시 알림 켜짐</span>{' '}
+        <Button size="sm" onClick={() => void disable()} disabled={busy}>푸시 알림 끄기</Button>
         {offError && <p style={{ color: 'var(--danger)' }}>{offError}</p>}
       </div>
     )
@@ -107,9 +107,12 @@ function NotificationBanner() {
   return (
     <Card style={{ border: '1px solid var(--accent)', marginBottom: 'var(--sp-4)' }}>
       <p style={{ color: 'var(--danger)' }}>
-        알림이 꺼져 있습니다. <strong>타이머가 완료되어도 알림이 오지 않습니다.</strong>
+        푸시 알림이 꺼져 있습니다. <strong>타이머가 완료돼도 휴대폰 알림 창에 표시되지 않습니다.</strong>
       </p>
-      <Button variant="primary" onClick={() => void enable()} disabled={busy}>알림 켜기</Button>
+      <Button variant="primary" onClick={() => void enable()} disabled={busy}>푸시 알림 켜기</Button>
+      <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+        시계 알람처럼 크게 울리지는 않습니다. 기본 알림음이 울리며, 휴대폰의 알림 설정에 따라 무음일 수 있습니다.
+      </p>
       {okMessage && <p>{okMessage}</p>}
       {reason && <PushHelp reason={reason} detail={detail} />}
     </Card>

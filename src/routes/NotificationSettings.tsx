@@ -88,9 +88,9 @@ export function NotificationSettings() {
       {draft && (
         <>
           <section>
-            <h2>완료 n분 전 알림</h2>
+            <h2>완료 n분 전 푸시 알림</h2>
             <p style={{ color: 'var(--text-dim)' }}>
-              타이머가 끝나기 전에 알림을 한 번 더 보냅니다. 0으로 설정하면 사용하지 않습니다.
+              타이머가 끝나기 전, 휴대폰 알림 창에 한 번 더 표시합니다. 0으로 설정하면 사용하지 않습니다.
             </p>
             <Field label="완료 몇 분 전에 알릴지 (0~120, 0 = 사용 안 함)">
               <input
@@ -104,13 +104,13 @@ export function NotificationSettings() {
           </section>
 
           <section>
-            <h2>일일퀘스트 알림</h2>
+            <h2>일일퀘스트 푸시 알림</h2>
             <label>
               <input
                 type="checkbox" checked={draft.daily_quest_enabled}
                 onChange={e => set({ daily_quest_enabled: e.target.checked })}
               />
-              리셋 전에 미완료 퀘스트 알림 받기
+              리셋 전에 미완료 퀘스트를 알림 창에 표시
             </label>
             <Field label="리셋 몇 시간 전에 알릴지 (1~12)">
               <input
