@@ -21,6 +21,7 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { SectionTitle } from '../components/ui/SectionTitle'
 import { EmptyState } from '../components/ui/EmptyState'
+import { Field } from '../components/ui/Field'
 import { GameIcon } from '../components/ui/GameIcon'
 
 const TIER_LABEL = ['I', 'II', 'III', 'IV', 'V'] as const
@@ -252,8 +253,10 @@ export function Home() {
                 setBusy(false)
               }
             }}>
-              <input placeholder="계정 추가" value={nick[s.id] ?? ''}
-                onChange={e => setNick({ ...nick, [s.id]: e.target.value })} />
+              <Field label="동일 서버 계정 추가">
+                <input placeholder="계정 닉네임" value={nick[s.id] ?? ''}
+                  onChange={e => setNick({ ...nick, [s.id]: e.target.value })} />
+              </Field>
               <Button type="submit" disabled={busy}>추가</Button>
             </form>
           </section>
@@ -267,31 +270,37 @@ export function Home() {
         const full = available.length === 0
 
         return (
-          <form onSubmit={async e => {
-            e.preventDefault()
-            setFormError(null)
-            const v = serverName
-            if (!v) return
-            setBusy(true)
-            try {
-              await createServer(v)
-              setServerName('')
-              await reload()
-            } catch (err) {
-              setFormError(err instanceof Error ? err.message : '추가하지 못했습니다.')
-            } finally {
-              setBusy(false)
-            }
-          }}>
-            <select value={serverName} onChange={e => setServerName(e.target.value)} disabled={full}>
-              <option value="">서버 선택</option>
-              {available.map(n => (
-                <option key={n} value={String(n)}>{n}서버</option>
-              ))}
-            </select>
-            <Button type="submit" disabled={busy || full || !serverName}>추가</Button>
-            {full && <p style={{ color: 'var(--text-dim)' }}>모든 서버가 추가되었습니다.</p>}
-          </form>
+          <Card style={{ marginTop: 'var(--sp-6)' }}>
+            <SectionTitle>다른 서버 추가</SectionTitle>
+            <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+              다른 서버에서도 플레이 중이라면 서버를 추가하세요.
+            </p>
+            <form onSubmit={async e => {
+              e.preventDefault()
+              setFormError(null)
+              const v = serverName
+              if (!v) return
+              setBusy(true)
+              try {
+                await createServer(v)
+                setServerName('')
+                await reload()
+              } catch (err) {
+                setFormError(err instanceof Error ? err.message : '추가하지 못했습니다.')
+              } finally {
+                setBusy(false)
+              }
+            }}>
+              <select value={serverName} onChange={e => setServerName(e.target.value)} disabled={full}>
+                <option value="">서버 선택</option>
+                {available.map(n => (
+                  <option key={n} value={String(n)}>{n}서버</option>
+                ))}
+              </select>
+              <Button type="submit" disabled={busy || full || !serverName}>추가</Button>
+              {full && <p style={{ color: 'var(--text-dim)' }}>모든 서버가 추가되었습니다.</p>}
+            </form>
+          </Card>
         )
       })()}
 
