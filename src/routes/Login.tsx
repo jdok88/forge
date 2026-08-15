@@ -56,6 +56,7 @@ export function Login() {
   return (
     <form onSubmit={submit}>
       <h1>Forge 알람</h1>
+      <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>by s54 skhy</p>
       <input
         type="email" required value={email} placeholder="이메일"
         autoComplete="email"

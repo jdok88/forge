@@ -177,6 +177,7 @@ export function Home() {
   return (
     <div>
       <h1>Forge 알람</h1>
+      <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>by s54 skhy</p>
       <GuestUpgradeBanner />
       <NotificationBanner />
       <Link to="/install">알림이 안 오나요?</Link>
