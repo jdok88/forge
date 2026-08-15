@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/Button'
 import { Field } from '../components/ui/Field'
+import { SectionTitle } from '../components/ui/SectionTitle'
 
 interface Prefs {
   pre_alert_min: number
@@ -80,13 +81,15 @@ export function NotificationSettings() {
   return (
     <div>
       <Link to="/">← 홈</Link>
-      <h1>알림 설정</h1>
+      <h1>추가기능 설정</h1>
 
       {loading && <p>불러오는 중…</p>}
       {loadError && <p style={{ color: 'var(--danger)' }}>{loadError}</p>}
 
       {draft && (
         <>
+          <SectionTitle>알림</SectionTitle>
+
           <section>
             <h2>완료 n분 전 푸시 알림</h2>
             <p style={{ color: 'var(--text-dim)' }}>
