@@ -6,9 +6,10 @@ import { useSession } from '../hooks/useSession'
 import { formatDuration } from '../game/format'
 import { forgeDuration } from '../game/durations'
 import { resourceEta } from '../game/eta'
+import { nextStepLine } from '../game/nextStep'
 import { RARITY_LABEL } from '../game/constants'
 import { TECH_NODES } from '../game/nodes'
-import type { Rarity } from '../game/types'
+import type { AccountConfig, Rarity } from '../game/types'
 import { subscribePush, unsubscribePush, type PushFailure } from '../lib/push'
 import { supabase } from '../lib/supabase'
 import { GuestUpgradeBanner } from '../components/GuestUpgradeBanner'
@@ -36,15 +37,21 @@ function timerLabel(t: TimerRow): string {
   return `대장간 ${t.meta.targetLevel}레벨`
 }
 
-function TimerLine({ t }: { t: TimerRow }) {
+/** cfg 를 주면(진행 중인 타이머만) 다음 단계 안내를 그 아래 작은 글씨로 덧붙인다 */
+function TimerLine({ t, cfg }: { t: TimerRow; cfg?: AccountConfig }) {
+  const nextLine = cfg ? nextStepLine(t, cfg) : null
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
-      padding: 'var(--sp-1) 0',
-    }}>
-      <GameIcon icon={timerIcon(t)} alt={timerLabel(t)} size="sm" />
-      <span style={{ flex: 1, fontSize: 'var(--fs-sm)' }}>{timerLabel(t)}</span>
-      <Countdown endsAt={t.ends_at} />
+    <div style={{ padding: 'var(--sp-1) 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+        <GameIcon icon={timerIcon(t)} alt={timerLabel(t)} size="sm" />
+        <span style={{ flex: 1, fontSize: 'var(--fs-sm)' }}>{timerLabel(t)}</span>
+        <Countdown endsAt={t.ends_at} />
+      </div>
+      {nextLine && (
+        <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)', paddingLeft: 'calc(1em + var(--sp-2))' }}>
+          {nextLine}
+        </div>
+      )}
     </div>
   )
 }
@@ -176,10 +183,12 @@ export function Home() {
                 .filter(t => new Date(t.ends_at).getTime() <= now)
                 .sort((x, y) => new Date(x.ends_at).getTime() - new Date(y.ends_at).getTime())
 
+              const cfg = toConfig(a)
+
               // 다음 대장간 레벨까지 골드 ETA — resourceEta 는 분당 단위이므로 초당 값을 60배해 변환한다
               let goldNote: string | null = null
               if (a.forge_level < 35 && a.gold_per_sec) {
-                const need = forgeDuration(a.forge_level + 1, toConfig(a)).gold
+                const need = forgeDuration(a.forge_level + 1, cfg).gold
                 const min = resourceEta(need, 0, a.gold_per_sec * 60)
                 if (min !== null) goldNote = `0부터 모으면 ${formatDuration(min * 60)}`
               }
@@ -211,7 +220,7 @@ export function Home() {
                       <>
                         <SectionTitle>진행 중 ({running.length})</SectionTitle>
                         <div>
-                          {running.map(t => <TimerLine key={t.id} t={t} />)}
+                          {running.map(t => <TimerLine key={t.id} t={t} cfg={cfg} />)}
                         </div>
                       </>
                     )}

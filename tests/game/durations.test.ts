@@ -5,7 +5,7 @@ import type { AccountConfig } from '../../src/game/types'
 const VANILLA: AccountConfig = {
   forgeSpeedLv: 0, forgeCostLv: 0, techSpeedLv: 0, techCostLv: 0,
   eggSpeedLv: { common: 0, rare: 0, epic: 0, legendary: 0, ultimate: 0, mythic: 0 },
-  goldPerMin: null, hammerPerMin: null, potionPerDay: null,
+  goldPerSec: null, hammerPerMin: null, potionPerDay: null,
 }
 
 const cfg = (over: Partial<AccountConfig>): AccountConfig => ({ ...VANILLA, ...over })

@@ -229,6 +229,7 @@ export function AccountDetail() {
               onStart={() => setSheet({ kind: 'tech', slot: 1 })}
               onComplete={onComplete} onCancel={onCancel} onElapsed={reload}
               continuePrompt={techPrompt}
+              cfg={toConfig(account)}
             />
           </>
         )
@@ -265,6 +266,7 @@ export function AccountDetail() {
               onStart={() => setSheet({ kind: 'forge', slot: 1 })}
               onComplete={onComplete} onCancel={onCancel} onElapsed={reload}
               continuePrompt={forgePrompt}
+              cfg={toConfig(account)}
             />
           </>
         )

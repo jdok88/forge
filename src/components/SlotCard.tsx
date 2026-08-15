@@ -2,11 +2,12 @@ import { Countdown } from './Countdown'
 import { gemsToSkip } from '../game/formulas'
 import { RARITY_LABEL } from '../game/constants'
 import { TECH_NODES } from '../game/nodes'
+import { nextStepLine } from '../game/nextStep'
 import { Card } from './ui/Card'
 import { Button } from './ui/Button'
 import { GameIcon, type GameIconSpec } from './ui/GameIcon'
 import type { TimerRow } from '../hooks/useTimers'
-import type { Rarity } from '../game/types'
+import type { AccountConfig, Rarity } from '../game/types'
 
 const TIER_LABEL = ['I', 'II', 'III', 'IV', 'V'] as const
 
@@ -55,10 +56,12 @@ interface Props {
   copyAction?: CopyAction
   /** 방금 완료한 슬롯에서 "이어서 시작할까요?" 를 묻는 인라인 프롬프트. 있으면 시작 버튼·copyAction 대신 렌더한다. */
   continuePrompt?: ContinuePrompt
+  /** 있으면 진행 중인 tech/forge 타이머 아래에 "다음 단계" 안내를 덧붙인다. 알 타이머는 대상이 자유 선택이라 표시하지 않는다. */
+  cfg?: AccountConfig
 }
 
 export function SlotCard({
-  label, timer, onStart, onComplete, onCancel, onElapsed, copyAction, continuePrompt,
+  label, timer, onStart, onComplete, onCancel, onElapsed, copyAction, continuePrompt, cfg,
 }: Props) {
   if (!timer) {
     if (continuePrompt) {
@@ -117,6 +120,12 @@ export function SlotCard({
           즉시완료 젬 {gemsToSkip(remain).toLocaleString()}
         </div>
       )}
+      {!awaitingConfirm && cfg && (() => {
+        const line = nextStepLine(timer, cfg)
+        return line && (
+          <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>{line}</div>
+        )
+      })()}
       <div style={{ display: 'flex', gap: 'var(--sp-2)', marginTop: 'var(--sp-2)' }}>
         <Button variant="primary" size="sm" onClick={() => onComplete(timer.id)}>
           {awaitingConfirm ? '완료' : '즉시완료'}

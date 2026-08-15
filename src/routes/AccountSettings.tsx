@@ -85,8 +85,12 @@ export function AccountSettings() {
       <h2>단축 노드 (0~25)</h2>
       <LevelRow label="제련 타이머" value={draft.forge_speed_lv} ratePct={RATE_PER_LEVEL.forgeSpeed}
         onChange={v => set({ forge_speed_lv: v })} note="시간 단축" />
+      <LevelRow label="제련 업그레이드 비용" value={draft.forge_cost_lv} ratePct={RATE_PER_LEVEL.forgeCost}
+        onChange={v => set({ forge_cost_lv: v })} note="비용 할인" />
       <LevelRow label="기술 연구 타이머" value={draft.tech_speed_lv} ratePct={RATE_PER_LEVEL.techSpeed}
         onChange={v => set({ tech_speed_lv: v })} note="시간 단축" />
+      <LevelRow label="기술 노드 업그레이드 비용" value={draft.tech_cost_lv} ratePct={RATE_PER_LEVEL.techCost}
+        onChange={v => set({ tech_cost_lv: v })} note="비용 할인" />
 
       <h3>알 타이머</h3>
       {RARITIES.map(r => (
