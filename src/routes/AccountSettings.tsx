@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { useAccounts, updateAccount, toConfig, type AccountRow } from '../hooks/useAccounts'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useAccounts, updateAccount, deleteAccount, toConfig, type AccountRow } from '../hooks/useAccounts'
+import { useTimers } from '../hooks/useTimers'
 import { RARITIES, RARITY_LABEL, RATE_PER_LEVEL, MAX_NODE_LEVEL } from '../game/constants'
 import { eggHatchSec } from '../game/durations'
 import { formatDuration } from '../game/format'
 import { Button } from '../components/ui/Button'
 import { Field } from '../components/ui/Field'
+import { SectionTitle } from '../components/ui/SectionTitle'
 import type { Rarity } from '../game/types'
 
 function LevelRow({ label, value, ratePct, onChange, note }: {
@@ -28,10 +30,14 @@ function LevelRow({ label, value, ratePct, onChange, note }: {
 
 export function AccountSettings() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { accounts, reload } = useAccounts()
+  const { timers } = useTimers(id)
   const [draft, setDraft] = useState<AccountRow | null>(null)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleteBusy, setDeleteBusy] = useState(false)
 
   useEffect(() => {
     const a = accounts.find(x => x.id === id)
@@ -60,6 +66,20 @@ export function AccountSettings() {
     } catch (e) {
       setSaved(false)
       setSaveError(e instanceof Error ? e.message : '저장에 실패했습니다.')
+    }
+  }
+
+  async function onDeleteAccount() {
+    if (!draft) return
+    setSaveError(null)
+    setDeleteBusy(true)
+    try {
+      await deleteAccount(draft.id)
+      navigate('/')
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : '삭제에 실패했습니다.')
+    } finally {
+      setDeleteBusy(false)
     }
   }
 
@@ -121,6 +141,20 @@ export function AccountSettings() {
       <Button variant="primary" onClick={() => void save()}>저장</Button>
       {saved && <span style={{ color: 'var(--success)' }}>저장됨</span>}
       {saveError && <span style={{ color: 'var(--danger)' }}>{saveError}</span>}
+
+      <hr style={{ margin: 'var(--sp-6) 0 var(--sp-3)' }} />
+      <SectionTitle>계정 삭제</SectionTitle>
+      {!confirmingDelete ? (
+        <Button variant="danger" onClick={() => setConfirmingDelete(true)}>이 계정 삭제</Button>
+      ) : (
+        <div>
+          <p style={{ color: 'var(--danger)' }}>
+            {draft.nickname} 계정과 진행 중인 타이머 {timers.length}개가 삭제됩니다. 되돌릴 수 없습니다.
+          </p>
+          <Button variant="danger" onClick={() => void onDeleteAccount()} disabled={deleteBusy}>삭제</Button>{' '}
+          <Button variant="ghost" onClick={() => setConfirmingDelete(false)} disabled={deleteBusy}>취소</Button>
+        </div>
+      )}
     </div>
   )
 }

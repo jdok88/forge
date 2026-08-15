@@ -92,3 +92,15 @@ export async function updateAccount(id: string, patch: Partial<AccountRow>) {
   const { error } = await supabase.from('accounts').update(patch).eq('id', id)
   if (error) throw error
 }
+
+/** 계정 삭제 — DB FK cascade 로 이 계정의 타이머·일일퀘스트 기록도 함께 지워진다 */
+export async function deleteAccount(id: string) {
+  const { error } = await supabase.from('accounts').delete().eq('id', id)
+  if (error) throw error
+}
+
+/** 서버 삭제 — DB FK cascade 로 이 서버의 계정과 그 하위 데이터가 모두 지워진다 */
+export async function deleteServer(id: string) {
+  const { error } = await supabase.from('servers').delete().eq('id', id)
+  if (error) throw error
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAccounts, createServer, createAccount, toConfig } from '../hooks/useAccounts'
+import { useAccounts, createServer, createAccount, deleteServer, toConfig } from '../hooks/useAccounts'
 import { useTimers, type TimerRow } from '../hooks/useTimers'
 import { useSession } from '../hooks/useSession'
 import { formatDuration } from '../game/format'
@@ -139,12 +139,28 @@ async function logout(isAnonymous: boolean) {
 
 export function Home() {
   const { servers, accounts, loading, error, reload } = useAccounts()
-  const { timers } = useTimers()
+  const { timers, reload: reloadTimers } = useTimers()
   const { session } = useSession()
   const [serverName, setServerName] = useState('')
   const [nick, setNick] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [confirmingServerId, setConfirmingServerId] = useState<string | null>(null)
+  const [serverDeleteBusy, setServerDeleteBusy] = useState(false)
+
+  async function onDeleteServer(serverId: string) {
+    setFormError(null)
+    setServerDeleteBusy(true)
+    try {
+      await deleteServer(serverId)
+      setConfirmingServerId(null)
+      await Promise.all([reload(), reloadTimers()])
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : '서버 삭제에 실패했습니다.')
+    } finally {
+      setServerDeleteBusy(false)
+    }
+  }
 
   // 진행 중/완료 판정을 1초마다 재평가해, 타이머가 끝나는 순간 자동으로 섹션이 바뀌게 한다
   const [now, setNow] = useState(() => Date.now())
@@ -171,9 +187,27 @@ export function Home() {
 
       {servers.map(s => {
         const list = accounts.filter(a => a.server_id === s.id)
+        const listIds = new Set(list.map(a => a.id))
+        const serverTimerCount = timers.filter(t => listIds.has(t.account_id)).length
         return (
           <section key={s.id}>
-            <h2>{s.name}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+              <h2 style={{ flex: 1 }}>{s.name}</h2>
+              <Button
+                variant="ghost" size="sm"
+                style={{ color: 'var(--danger)', fontSize: 'var(--fs-sm)' }}
+                onClick={() => setConfirmingServerId(s.id)}
+              >
+                삭제
+              </Button>
+            </div>
+            {confirmingServerId === s.id && (
+              <p style={{ color: 'var(--danger)', fontSize: 'var(--fs-sm)' }}>
+                {s.name}서버와 계정 {list.length}개, 타이머 {serverTimerCount}개가 모두 삭제됩니다. 되돌릴 수 없습니다.{' '}
+                <Button variant="danger" size="sm" onClick={() => void onDeleteServer(s.id)} disabled={serverDeleteBusy}>삭제</Button>{' '}
+                <Button variant="ghost" size="sm" onClick={() => setConfirmingServerId(null)} disabled={serverDeleteBusy}>취소</Button>
+              </p>
+            )}
             {list.map(a => {
               const mine = timers.filter(t => t.account_id === a.id)
               const running = mine
