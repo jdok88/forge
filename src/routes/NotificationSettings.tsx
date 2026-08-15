@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/Button'
+import { Card } from '../components/ui/Card'
+import { Badge } from '../components/ui/Badge'
 import { Field } from '../components/ui/Field'
 import { SectionTitle } from '../components/ui/SectionTitle'
 
@@ -17,7 +19,8 @@ const DEFAULT_PREFS: Prefs = {
   daily_quest_remind_hours_before: 1,
 }
 
-const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
+const PRE_ALERT_MIN_OPTIONS = [0, 1, 3, 5, 10, 15, 30, 60, 120]
+const REMIND_HOURS_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1)
 
 export function NotificationSettings() {
   const [draft, setDraft] = useState<Prefs | null>(null)
@@ -91,18 +94,22 @@ export function NotificationSettings() {
           <SectionTitle>알림</SectionTitle>
 
           <section>
-            <h2>완료 n분 전 푸시 알림</h2>
-            <p style={{ color: 'var(--text-dim)' }}>
-              타이머가 끝나기 전, 휴대폰 알림 창에 한 번 더 표시합니다. 0으로 설정하면 사용하지 않습니다.
-            </p>
-            <Field label="완료 몇 분 전에 알릴지 (0~120, 0 = 사용 안 함)">
-              <input
-                type="number" min={0} max={120} value={draft.pre_alert_min}
-                onChange={e => {
-                  const v = Number(e.target.value)
-                  set({ pre_alert_min: Number.isFinite(v) ? clamp(Math.trunc(v), 0, 120) : 0 })
-                }}
-              />
+            <h2>완료 전 추가 알림</h2>
+            <Card style={{ border: '1px solid var(--accent)', marginBottom: 'var(--sp-2)' }}>
+              <Badge variant="accent">추가 알림</Badge>
+              <p style={{ margin: 'var(--sp-1) 0 0' }}>
+                완료 알림은 설정과 관계없이 항상 옵니다. 이 설정은 그보다 <strong>먼저</strong> 한 번 더 알려주는 추가 알림입니다.
+              </p>
+            </Card>
+            <Field label="완료 몇 분 전에 추가로 알릴지">
+              <select
+                value={draft.pre_alert_min}
+                onChange={e => set({ pre_alert_min: Number(e.target.value) })}
+              >
+                {PRE_ALERT_MIN_OPTIONS.map(n => (
+                  <option key={n} value={n}>{n === 0 ? '사용 안 함' : `${n}분 전`}</option>
+                ))}
+              </select>
             </Field>
           </section>
 
@@ -115,15 +122,16 @@ export function NotificationSettings() {
               />
               리셋 전에 미완료 퀘스트를 알림 창에 표시
             </label>
-            <Field label="리셋 몇 시간 전에 알릴지 (1~12)">
-              <input
-                type="number" min={1} max={12} value={draft.daily_quest_remind_hours_before}
+            <Field label="리셋 몇 시간 전에 알릴지">
+              <select
+                value={draft.daily_quest_remind_hours_before}
                 disabled={!draft.daily_quest_enabled}
-                onChange={e => {
-                  const v = Number(e.target.value)
-                  set({ daily_quest_remind_hours_before: Number.isFinite(v) ? clamp(Math.trunc(v), 1, 12) : 1 })
-                }}
-              />
+                onChange={e => set({ daily_quest_remind_hours_before: Number(e.target.value) })}
+              >
+                {REMIND_HOURS_OPTIONS.map(n => (
+                  <option key={n} value={n}>{n}시간 전</option>
+                ))}
+              </select>
             </Field>
           </section>
 
