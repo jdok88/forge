@@ -1,20 +1,52 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAccounts, createServer, createAccount, toConfig } from '../hooks/useAccounts'
-import { useTimers } from '../hooks/useTimers'
+import { useTimers, type TimerRow } from '../hooks/useTimers'
 import { useSession } from '../hooks/useSession'
 import { formatDuration } from '../game/format'
 import { forgeDuration } from '../game/durations'
 import { resourceEta } from '../game/eta'
+import { RARITY_LABEL } from '../game/constants'
+import { TECH_NODES } from '../game/nodes'
+import type { Rarity } from '../game/types'
 import { subscribePush, unsubscribePush, type PushFailure } from '../lib/push'
 import { supabase } from '../lib/supabase'
 import { GuestUpgradeBanner } from '../components/GuestUpgradeBanner'
 import { PushHelp } from '../components/PushHelp'
 import { Countdown } from '../components/Countdown'
+import { timerIcon } from '../components/SlotCard'
 import { isInAppBrowser } from '../lib/browser'
 import { useNotificationStatus } from '../hooks/useNotificationStatus'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { SectionTitle } from '../components/ui/SectionTitle'
+import { EmptyState } from '../components/ui/EmptyState'
+import { GameIcon } from '../components/ui/GameIcon'
 
-const KIND_ICON = { egg: '🥚', tech: '⚗️', forge: '⚒️' } as const
+const TIER_LABEL = ['I', 'II', 'III', 'IV', 'V'] as const
+
+/** 홈 카드용 짧은 라벨 — 상세 화면(SlotCard)의 표기와는 의도적으로 다르다 */
+function timerLabel(t: TimerRow): string {
+  if (t.kind === 'egg') return `${RARITY_LABEL[t.meta.rarity as Rarity]}알 · 슬롯 ${t.slot}`
+  if (t.kind === 'tech') {
+    const node = TECH_NODES.find(n => n.id === t.meta.nodeId)
+    return `${node?.name ?? '기술'} ${TIER_LABEL[(t.meta.tier as number) - 1]} ${t.meta.level}/5`
+  }
+  return `대장간 ${t.meta.targetLevel}레벨`
+}
+
+function TimerLine({ t }: { t: TimerRow }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
+      padding: 'var(--sp-1) 0',
+    }}>
+      <GameIcon icon={timerIcon(t)} alt={timerLabel(t)} size="sm" />
+      <span style={{ flex: 1, fontSize: 'var(--fs-sm)' }}>{timerLabel(t)}</span>
+      <Countdown endsAt={t.ends_at} />
+    </div>
+  )
+}
 
 function NotificationBanner() {
   const { active, refresh } = useNotificationStatus()
@@ -66,24 +98,21 @@ function NotificationBanner() {
     return (
       <div style={{ marginBottom: 'var(--sp-4)', fontSize: 'var(--fs-sm)' }}>
         <span style={{ color: 'var(--text-dim)' }}>알림 켜짐</span>{' '}
-        <button type="button" onClick={() => void disable()} disabled={busy}>알림 끄기</button>
+        <Button size="sm" onClick={() => void disable()} disabled={busy}>알림 끄기</Button>
         {offError && <p style={{ color: 'var(--danger)' }}>{offError}</p>}
       </div>
     )
   }
 
   return (
-    <div style={{
-      background: 'var(--surface-2)', border: '1px solid var(--accent)',
-      borderRadius: 'var(--r-md)', padding: 'var(--sp-3)', marginBottom: 'var(--sp-4)',
-    }}>
+    <Card style={{ border: '1px solid var(--accent)', marginBottom: 'var(--sp-4)' }}>
       <p style={{ color: 'var(--danger)' }}>
         알림이 꺼져 있습니다. <strong>타이머가 완료되어도 알림이 오지 않습니다.</strong>
       </p>
-      <button type="button" onClick={() => void enable()} disabled={busy}>알림 켜기</button>
+      <Button variant="primary" onClick={() => void enable()} disabled={busy}>알림 켜기</Button>
       {okMessage && <p>{okMessage}</p>}
       {reason && <PushHelp reason={reason} detail={detail} />}
-    </div>
+    </Card>
   )
 }
 
@@ -105,6 +134,13 @@ export function Home() {
   const [nick, setNick] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  // 진행 중/완료 판정을 1초마다 재평가해, 타이머가 끝나는 순간 자동으로 섹션이 바뀌게 한다
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
 
   if (loading) return <p>불러오는 중…</p>
 
@@ -129,9 +165,12 @@ export function Home() {
             <h2>{s.name}</h2>
             {list.map(a => {
               const mine = timers.filter(t => t.account_id === a.id)
-              const soonest = mine
-                .slice()
-                .sort((x, y) => new Date(x.ends_at).getTime() - new Date(y.ends_at).getTime())[0]
+              const running = mine
+                .filter(t => new Date(t.ends_at).getTime() > now)
+                .sort((x, y) => new Date(x.ends_at).getTime() - new Date(y.ends_at).getTime())
+              const finished = mine
+                .filter(t => new Date(t.ends_at).getTime() <= now)
+                .sort((x, y) => new Date(x.ends_at).getTime() - new Date(y.ends_at).getTime())
 
               // 다음 대장간 레벨까지 골드 ETA
               let goldNote: string | null = null
@@ -141,31 +180,47 @@ export function Home() {
                 if (min !== null) goldNote = `0부터 모으면 ${formatDuration(min * 60)}`
               }
 
-              const counts = { egg: 0, tech: 0, forge: 0 }
-              for (const t of mine) counts[t.kind]++
-
               return (
-                <Link key={a.id} to={`/account/${a.id}`}
-                  style={{
-                    display: 'block', background: 'var(--surface)',
-                    borderLeft: `4px solid ${a.color}`, borderRadius: 'var(--r-md)',
-                    padding: 'var(--sp-3)', marginBottom: 'var(--sp-2)',
-                    color: 'var(--text)', textDecoration: 'none',
-                  }}>
-                  <strong>{a.nickname}</strong>
-                  <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
-                    {(['egg', 'tech', 'forge'] as const)
-                      .filter(k => counts[k] > 0)
-                      .map(k => `${KIND_ICON[k]}${counts[k]}`)
-                      .join(' ') || '진행 중인 타이머 없음'}
+                <Card key={a.id} accentColor={a.color} style={{ marginBottom: 'var(--sp-2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+                    <Link to={`/account/${a.id}`} style={{
+                      flex: 1, color: a.color, fontWeight: 700, fontSize: 'var(--fs-md)',
+                      textDecoration: 'none',
+                    }}>
+                      {a.nickname}
+                    </Link>
+                    <span style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-xs)' }}>{s.name}</span>
+                    <Link to={`/account/${a.id}/settings`} style={{ fontSize: 'var(--fs-sm)' }}>설정</Link>
                   </div>
-                  {soonest !== undefined && (
-                    <div>가장 빠른 완료: <Countdown endsAt={soonest.ends_at} /></div>
-                  )}
+
                   {goldNote && (
-                    <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>{goldNote}</div>
+                    <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)', marginTop: 'var(--sp-1)' }}>
+                      {goldNote}
+                    </div>
                   )}
-                </Link>
+
+                  {running.length === 0 && finished.length === 0 && (
+                    <EmptyState message="진행 중인 타이머가 없습니다" />
+                  )}
+
+                  {running.length > 0 && (
+                    <>
+                      <SectionTitle>진행 중 ({running.length})</SectionTitle>
+                      <div>
+                        {running.map(t => <TimerLine key={t.id} t={t} />)}
+                      </div>
+                    </>
+                  )}
+
+                  {finished.length > 0 && (
+                    <>
+                      <SectionTitle>완료 · 확인 필요 ({finished.length})</SectionTitle>
+                      <div style={{ borderLeft: '2px solid var(--success)', paddingLeft: 'var(--sp-2)' }}>
+                        {finished.map(t => <TimerLine key={t.id} t={t} />)}
+                      </div>
+                    </>
+                  )}
+                </Card>
               )
             })}
 
@@ -187,7 +242,7 @@ export function Home() {
             }}>
               <input placeholder="계정 추가" value={nick[s.id] ?? ''}
                 onChange={e => setNick({ ...nick, [s.id]: e.target.value })} />
-              <button type="submit" disabled={busy}>추가</button>
+              <Button type="submit" disabled={busy}>추가</Button>
             </form>
           </section>
         )
@@ -222,7 +277,7 @@ export function Home() {
                 <option key={n} value={String(n)}>{n}서버</option>
               ))}
             </select>
-            <button type="submit" disabled={busy || full || !serverName}>추가</button>
+            <Button type="submit" disabled={busy || full || !serverName}>추가</Button>
             {full && <p style={{ color: 'var(--text-dim)' }}>모든 서버가 추가되었습니다.</p>}
           </form>
         )
@@ -230,7 +285,7 @@ export function Home() {
 
       {formError && <p style={{ color: 'var(--danger)' }}>{formError}</p>}
 
-      <button type="button" onClick={() => void logout(isAnonymous)}>로그아웃</button>
+      <Button variant="ghost" onClick={() => void logout(isAnonymous)}>로그아웃</Button>
     </div>
   )
 }

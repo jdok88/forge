@@ -19,7 +19,7 @@ function describe(t: TimerRow): string {
   return `대장간 → ${t.meta.targetLevel}`
 }
 
-function iconOf(t: TimerRow): GameIconSpec {
+export function timerIcon(t: TimerRow): GameIconSpec {
   if (t.kind === 'egg') return { kind: 'egg', rarity: t.meta.rarity as Rarity }
   if (t.kind === 'tech') {
     const node = TECH_NODES.find(n => n.id === t.meta.nodeId)
@@ -53,7 +53,7 @@ export function SlotCard({ label, timer, onStart, onComplete, onCancel, onElapse
   return (
     <Card style={{ marginBottom: 'var(--sp-2)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
-        <GameIcon icon={iconOf(timer)} alt={describe(timer)} size="sm" />
+        <GameIcon icon={timerIcon(timer)} alt={describe(timer)} size="sm" />
         <div>
           <div style={{ color: 'var(--text-dim)' }}>{label}</div>
           <div>{describe(timer)}</div>
