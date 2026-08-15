@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAccounts, updateAccount, toConfig } from '../hooks/useAccounts'
-import { useTimers, startTimer, completeTimer, cancelTimer, type TimerKind } from '../hooks/useTimers'
+import { useTimers, startTimer, completeTimer, cancelTimer, type TimerKind, type TimerRow } from '../hooks/useTimers'
 import { useDailyQuests } from '../hooks/useDailyQuests'
 import { DAILY_QUESTS } from '../game/quests'
 import { eggHatchSec, forgeDuration, isForgeFreeSkip } from '../game/durations'
+import { formatCountdown, formatDuration } from '../game/format'
 import { RARITY_LABEL, MAX_NODE_LEVEL } from '../game/constants'
 import { TECH_NODES, calcFieldForNode } from '../game/nodes'
 import type { Rarity } from '../game/types'
@@ -112,13 +113,17 @@ export function AccountDetail() {
     }
   }
 
-  async function onCopyPreviousEgg(slot: number, rarity: Rarity) {
+  async function onCopyPreviousEgg(slot: number, source: TimerRow) {
     if (!account) return
     setActionError(null)
     setCopyingSlot(slot)
     try {
-      const sec = eggHatchSec(rarity, toConfig(account))
-      await startTimer({ accountId: account.id, kind: 'egg', slot, meta: { rarity }, sec, autoSec: sec })
+      const rarity = source.meta.rarity as Rarity
+      const autoSec = eggHatchSec(rarity, toConfig(account))
+      // 원본 슬롯의 남은 시간을 그대로 옮긴다 — 게임에서 비슷한 시점에 넣은 알들을 그대로 복사하는 흐름
+      const remainingSec = Math.round((new Date(source.ends_at).getTime() - Date.now()) / 1000)
+      const sec = remainingSec > 0 ? remainingSec : autoSec
+      await startTimer({ accountId: account.id, kind: 'egg', slot, meta: { rarity }, sec, autoSec })
       await reload()
     } catch (e) {
       setActionError(e instanceof Error ? e.message : '복사 시작에 실패했습니다.')
@@ -192,11 +197,18 @@ export function AccountDetail() {
 
             // 방금 완료한 슬롯에 이어서-부화 프롬프트가 떠 있는 동안은 복사 버튼을 같이 보여주지 않는다
             const copyAction = !timer && !continuePromptProp && prev
-              ? {
-                  label: `슬롯 ${slot - 1} 복사 (${RARITY_LABEL[prev.meta.rarity as Rarity]})`,
-                  onClick: () => void onCopyPreviousEgg(slot, prev.meta.rarity as Rarity),
-                  disabled: copyingSlot === slot,
-                }
+              ? (() => {
+                  const rarity = prev.meta.rarity as Rarity
+                  const remainingSec = Math.round((new Date(prev.ends_at).getTime() - Date.now()) / 1000)
+                  const timeLabel = remainingSec > 0
+                    ? formatCountdown(remainingSec)
+                    : formatDuration(eggHatchSec(rarity, toConfig(account)))
+                  return {
+                    label: `슬롯 ${slot - 1} 복사 (${RARITY_LABEL[rarity]} · ${timeLabel})`,
+                    onClick: () => void onCopyPreviousEgg(slot, prev),
+                    disabled: copyingSlot === slot,
+                  }
+                })()
               : undefined
 
             return (
