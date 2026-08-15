@@ -89,6 +89,27 @@ curl -s -X POST "https://khzliuwullyvfhfdeuvu.supabase.co/functions/v1/dispatch-
 - 시간 = `기본초 ÷ (1 + 속도%)`, 비용 = `기본값 × (1 - 할인%)`. **혼동하면 전부 틀린다.**
 - 알림 지연은 크론 주기가 상한 = 최대 10초.
 
+## 안드로이드 서명 키 — 가장 잃으면 안 되는 것
+
+`.keystore/forge.p12` 와 `.keystore/credentials.txt` (둘 다 git 제외).
+GitHub Secrets 에도 `ANDROID_KEYSTORE_B64` / `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_ALIAS` 로 올라가 있다.
+
+**이 키를 잃으면 같은 서명으로 앱을 업데이트할 수 없다.** 새 키로 빌드한 APK 는 안드로이드가
+다른 앱으로 취급해서, 기존 사용자가 앱을 지우고 다시 깔아야 하며 그 과정에서 로컬 알림 예약도
+사라진다. Play 스토어에 올린 뒤라면 아예 업데이트가 불가능해진다.
+
+`.keystore/` 폴더를 이 PC 밖에도 복사해 둘 것. GitHub Secrets 는 값을 다시 읽을 수 없으므로
+백업이 아니다.
+
+## APK 배포
+
+- 다운로드(로그인 불필요, 영구): https://github.com/jdok88/forge/releases/latest/download/app-release.apk
+- 안내 페이지: https://github.com/jdok88/forge/releases/tag/latest
+- `main` 에 푸시하면 GitHub Actions 가 릴리스 서명 APK 를 빌드해 위 주소를 갱신한다.
+
+사이드로드라 설치 시 Play Protect 경고가 뜬다. 디버그 서명이던 시절엔 **차단**됐고, 릴리스
+서명으로 바꿔 경고 수준으로 낮아졌다. 경고를 완전히 없애려면 Play 스토어 등록($25) 이 필요하다.
+
 ## 문서
 
 - 설계: `docs/superpowers/specs/2026-08-14-forge-master-alarm-design.md`
