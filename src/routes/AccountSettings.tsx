@@ -52,7 +52,7 @@ export function AccountSettings() {
         forge_speed_lv: draft.forge_speed_lv, forge_cost_lv: draft.forge_cost_lv,
         tech_speed_lv: draft.tech_speed_lv, tech_cost_lv: draft.tech_cost_lv,
         egg_speed_lv: draft.egg_speed_lv, forge_level: draft.forge_level,
-        gold_per_min: draft.gold_per_min, hammer_per_min: draft.hammer_per_min,
+        gold_per_sec: draft.gold_per_sec, hammer_per_min: draft.hammer_per_min,
         potion_per_day: draft.potion_per_day, nickname: draft.nickname,
       })
       await reload()
@@ -98,10 +98,13 @@ export function AccountSettings() {
       ))}
 
       <h2>수급률 (선택)</h2>
-      <Field label="분당 골드">
-        <input type="number" value={draft.gold_per_min ?? ''}
-          onChange={e => set({ gold_per_min: e.target.value === '' ? null : Number(e.target.value) })} />
+      <Field label="초당 골드">
+        <input type="number" value={draft.gold_per_sec ?? ''}
+          onChange={e => set({ gold_per_sec: e.target.value === '' ? null : Number(e.target.value) })} />
       </Field>
+      <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+        게임 화면에 표시되는 초당 골드 값을 그대로 입력하세요.
+      </p>
       <Field label="분당 망치">
         <input type="number" value={draft.hammer_per_min ?? ''}
           onChange={e => set({ hammer_per_min: e.target.value === '' ? null : Number(e.target.value) })} />

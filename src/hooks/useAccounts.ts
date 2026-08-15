@@ -19,7 +19,7 @@ export interface AccountRow {
   tech_speed_lv: number
   tech_cost_lv: number
   egg_speed_lv: Record<Rarity, number>
-  gold_per_min: number | null
+  gold_per_sec: number | null
   hammer_per_min: number | null
   potion_per_day: number | null
   sort_order: number
@@ -32,7 +32,7 @@ export function toConfig(a: AccountRow): AccountConfig {
     techSpeedLv: a.tech_speed_lv,
     techCostLv: a.tech_cost_lv,
     eggSpeedLv: a.egg_speed_lv,
-    goldPerMin: a.gold_per_min,
+    goldPerSec: a.gold_per_sec,
     hammerPerMin: a.hammer_per_min,
     potionPerDay: a.potion_per_day,
   }

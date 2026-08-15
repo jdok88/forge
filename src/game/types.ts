@@ -23,7 +23,7 @@ export interface AccountConfig {
   techSpeedLv: number
   techCostLv: number
   eggSpeedLv: Record<Rarity, number>
-  goldPerMin: number | null
+  goldPerSec: number | null
   hammerPerMin: number | null
   potionPerDay: number | null
 }

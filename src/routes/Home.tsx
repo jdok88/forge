@@ -176,11 +176,11 @@ export function Home() {
                 .filter(t => new Date(t.ends_at).getTime() <= now)
                 .sort((x, y) => new Date(x.ends_at).getTime() - new Date(y.ends_at).getTime())
 
-              // 다음 대장간 레벨까지 골드 ETA
+              // 다음 대장간 레벨까지 골드 ETA — resourceEta 는 분당 단위이므로 초당 값을 60배해 변환한다
               let goldNote: string | null = null
-              if (a.forge_level < 35 && a.gold_per_min) {
+              if (a.forge_level < 35 && a.gold_per_sec) {
                 const need = forgeDuration(a.forge_level + 1, toConfig(a)).gold
-                const min = resourceEta(need, 0, a.gold_per_min)
+                const min = resourceEta(need, 0, a.gold_per_sec * 60)
                 if (min !== null) goldNote = `0부터 모으면 ${formatDuration(min * 60)}`
               }
 
