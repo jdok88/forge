@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { subscribePush, type PushFailure } from '../lib/push'
+import { isNative } from '../lib/nativeAlarm'
 import { isIos } from '../lib/browser'
 import { PushHelp } from '../components/PushHelp'
 import { supabase } from '../lib/supabase'
@@ -121,6 +122,19 @@ export function InstallGuide() {
     } finally {
       setBusy(false)
     }
+  }
+
+  if (isNative()) {
+    return (
+      <div>
+        <Link to="/">← 홈</Link>
+        <h1>알림 설정</h1>
+        <p>
+          이 앱은 타이머가 완료되면 기기가 직접 알림을 울립니다. 브라우저 푸시 알림과 달리
+          별도로 켤 필요가 없습니다.
+        </p>
+      </div>
+    )
   }
 
   return (

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useTimers } from './useTimers'
+import { isNative, syncLocalAlarms } from '../lib/nativeAlarm'
 
 export function useForegroundAlarm() {
   const { timers, reload } = useTimers()
@@ -7,12 +8,19 @@ export function useForegroundAlarm() {
 
   // useTimers 는 최초 1회만 조회한다. 앱이 열려 있는 동안 새로 시작된 타이머를
   // 예약하려면 주기적으로 다시 읽어야 한다. 30초면 8분짜리 알도 넉넉히 앞서 잡힌다.
+  // (네이티브에서도 필요하다 — 새로 시작된 타이머를 syncLocalAlarms 가 알아채는 유일한 경로다)
   useEffect(() => {
     const id = window.setInterval(() => { void reload() }, 30_000)
     return () => clearInterval(id)
   }, [reload])
 
   useEffect(() => {
+    // 네이티브: OS 가 예약된 로컬 알림을 직접 울리므로 브라우저 Notification/setTimeout 은 필요 없다.
+    if (isNative()) {
+      void syncLocalAlarms(timers)
+      return
+    }
+
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
 
     const handles: number[] = []

@@ -11,6 +11,7 @@ import { RARITY_LABEL } from '../game/constants'
 import { TECH_NODES } from '../game/nodes'
 import type { AccountConfig, Rarity } from '../game/types'
 import { subscribePush, unsubscribePush, type PushFailure } from '../lib/push'
+import { isNative } from '../lib/nativeAlarm'
 import { supabase } from '../lib/supabase'
 import { GuestUpgradeBanner } from '../components/GuestUpgradeBanner'
 import { PushHelp } from '../components/PushHelp'
@@ -66,6 +67,15 @@ function NotificationBanner() {
   const [okMessage, setOkMessage] = useState<string | null>(null)
   const [offError, setOffError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  // 네이티브 앱은 로컬 알림이 자동으로 예약되므로 푸시 켜기/끄기 UI 자체가 필요 없다.
+  if (isNative()) {
+    return (
+      <div style={{ marginBottom: 'var(--sp-4)', fontSize: 'var(--fs-sm)' }}>
+        <span style={{ color: 'var(--text-dim)' }}>알림은 앱이 자동으로 예약합니다.</span>
+      </div>
+    )
+  }
 
   if (active === null) return null
 

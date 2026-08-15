@@ -7,6 +7,7 @@ import { gemsToSkip } from '../game/formulas'
 import { startTimer, type TimerKind } from '../hooks/useTimers'
 import { toConfig, type AccountRow } from '../hooks/useAccounts'
 import { subscribePush } from '../lib/push'
+import { isNative } from '../lib/nativeAlarm'
 import { useNotificationStatus } from '../hooks/useNotificationStatus'
 import { Button } from './ui/Button'
 import { Field } from './ui/Field'
@@ -208,7 +209,7 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
               onChange={v => { setTouched(true); setSec(v) }}
             />
             <p style={{ color: 'var(--text-dim)' }}>즉시완료 시 젬 {gemsToSkip(sec).toLocaleString()}</p>
-            {notifActive === false && (
+            {notifActive === false && !isNative() && (
               <p style={{ color: 'var(--danger)' }}>
                 푸시 알림이 꺼져 있어 완료돼도 알림 창에 표시되지 않습니다.{' '}
                 <Button size="sm" onClick={() => void enableNotifications()}>푸시 알림 켜기</Button>

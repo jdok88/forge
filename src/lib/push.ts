@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { isNative } from './nativeAlarm'
 
 export function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
@@ -20,6 +21,9 @@ export type PushOutcome =
 const SW_READY_TIMEOUT_MS = 10_000
 
 export async function subscribePush(): Promise<PushOutcome> {
+  // 네이티브 앱은 로컬 알림(syncLocalAlarms)이 완료/사전 알림을 모두 처리한다.
+  // 웹 푸시 구독 자체가 불필요하므로 아무 것도 하지 않고 성공으로 반환한다.
+  if (isNative()) return { ok: true }
   if (window.isSecureContext === false) return { ok: false, reason: 'insecure' }
   if (!('serviceWorker' in navigator)) return { ok: false, reason: 'no-serviceworker' }
   if (!('PushManager' in window)) return { ok: false, reason: 'no-pushmanager' }
