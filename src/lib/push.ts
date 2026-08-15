@@ -56,13 +56,16 @@ export async function subscribePush(): Promise<PushOutcome> {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) return { ok: false, reason: 'not-signed-in' }
 
-  const { error } = await supabase.from('push_subscriptions').upsert({
-    user_id: userData.user.id,
-    endpoint: sub.endpoint,
-    p256dh: json.keys!.p256dh,
-    auth: json.keys!.auth,
-    user_agent: navigator.userAgent,
-  }, { onConflict: 'endpoint' })
+  // endpoint의 소유자는 같은 기기에서 가장 최근에 알림을 켠 사용자여야 함.
+  // upsert는 endpoint UNIQUE 충돌 시 UPDATE 경로를 타는데, RLS의
+  // USING (user_id = auth.uid())가 기존 행(이전 사용자) 기준으로 평가되어
+  // 다른 사용자가 소유한 행이면 거부된다. RPC(security definer)가 소유권 이전을 대신 처리.
+  const { error } = await supabase.rpc('claim_push_subscription', {
+    p_endpoint: sub.endpoint,
+    p_p256dh: json.keys!.p256dh,
+    p_auth: json.keys!.auth,
+    p_user_agent: navigator.userAgent,
+  })
 
   if (error) return { ok: false, reason: 'save-failed', detail: error.message }
 
