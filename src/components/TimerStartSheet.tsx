@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { DurationInput } from './DurationInput'
 import { RARITIES, RARITY_LABEL } from '../game/constants'
 import { TECH_NODES, BRANCH_LABEL, calcFieldForNode } from '../game/nodes'
@@ -12,19 +11,10 @@ import { useNotificationStatus } from '../hooks/useNotificationStatus'
 import { Button } from './ui/Button'
 import { Field } from './ui/Field'
 import { GameIcon } from './ui/GameIcon'
+import { SettingsHint } from './ui/SettingsHint'
 import type { Rarity } from '../game/types'
 
 const TIER_LABEL = ['I', 'II', 'III', 'IV', 'V'] as const
-
-/** 계산에 쓰이는 노드 레벨이 0단계일 때 보여주는 안내 — 에러가 아니라 정보성 힌트 */
-function ZeroLevelHint({ accountId, message }: { accountId: string; message: string }) {
-  return (
-    <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
-      {message}{' '}
-      <Link to={`/account/${accountId}/settings`}>계정별 상세설정</Link>
-    </p>
-  )
-}
 
 interface Props {
   account: AccountRow
@@ -145,7 +135,7 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
               ))}
             </div>
             {cfg.eggSpeedLv[rarity] === 0 && (
-              <ZeroLevelHint
+              <SettingsHint
                 accountId={account.id}
                 message={`${RARITY_LABEL[rarity]} 알 타이머 노드가 0단계입니다. 게임에서 올렸다면 등록해 주세요.`}
               />
@@ -177,7 +167,7 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
               ⏱ 표시된 노드는 타이머 계산에 반영됩니다.
             </p>
             {cfg.techSpeedLv === 0 && (
-              <ZeroLevelHint accountId={account.id} message="기술 연구 타이머 노드가 0단계입니다. 게임에서 올렸다면 등록해 주세요." />
+              <SettingsHint accountId={account.id} message="기술 연구 타이머 노드가 0단계입니다. 게임에서 올렸다면 등록해 주세요." />
             )}
 
             <Field label="티어">
@@ -203,8 +193,11 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
               {forgeMaxed && ' — 이미 최대 레벨입니다. 승천 후 레벨을 1로 되돌리세요.'}
               {forgeFree && ' — 게임에서 무료 즉시완료가 가능한 구간입니다.'}
             </p>
+            {account.forge_level === 1 && (
+              <SettingsHint accountId={account.id} message="대장간 레벨이 1(기본값)입니다. 실제 레벨이 다르면 설정해 주세요." />
+            )}
             {cfg.forgeSpeedLv === 0 && (
-              <ZeroLevelHint accountId={account.id} message="제련 타이머 노드가 0단계입니다. 게임에서 올렸다면 등록해 주세요." />
+              <SettingsHint accountId={account.id} message="제련 타이머 노드가 0단계입니다. 게임에서 올렸다면 등록해 주세요." />
             )}
           </>
         )}

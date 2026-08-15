@@ -13,6 +13,7 @@ import { SlotCard } from '../components/SlotCard'
 import { TimerStartSheet } from '../components/TimerStartSheet'
 import { DailyQuests } from '../components/DailyQuests'
 import { TabBar, type TabDef } from '../components/ui/TabBar'
+import { SettingsHint } from '../components/ui/SettingsHint'
 
 const EGG_SLOTS = [1, 2, 3, 4]
 const FORGE_MAX_LEVEL = 35
@@ -273,6 +274,9 @@ export function AccountDetail() {
         return (
           <>
             <h2>대장간 (레벨 {account.forge_level})</h2>
+            {account.forge_level === 1 && (
+              <SettingsHint accountId={account.id} message="대장간 레벨이 1(기본값)입니다. 실제 레벨이 다르면 설정해 주세요." />
+            )}
             <SlotCard
               label="업그레이드" timer={find('forge', 1)}
               onStart={() => setSheet({ kind: 'forge', slot: 1 })}
