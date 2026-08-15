@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/Button'
+import { Field } from '../components/ui/Field'
 
 interface Prefs {
   pre_alert_min: number
@@ -91,8 +92,7 @@ export function NotificationSettings() {
             <p style={{ color: 'var(--text-dim)' }}>
               타이머가 끝나기 전에 알림을 한 번 더 보냅니다. 0으로 설정하면 사용하지 않습니다.
             </p>
-            <label>
-              완료 몇 분 전에 알릴지 (0~120, 0 = 사용 안 함)
+            <Field label="완료 몇 분 전에 알릴지 (0~120, 0 = 사용 안 함)">
               <input
                 type="number" min={0} max={120} value={draft.pre_alert_min}
                 onChange={e => {
@@ -100,7 +100,7 @@ export function NotificationSettings() {
                   set({ pre_alert_min: Number.isFinite(v) ? clamp(Math.trunc(v), 0, 120) : 0 })
                 }}
               />
-            </label>
+            </Field>
           </section>
 
           <section>
@@ -112,8 +112,7 @@ export function NotificationSettings() {
               />
               리셋 전에 미완료 퀘스트 알림 받기
             </label>
-            <label>
-              리셋 몇 시간 전에 알릴지 (1~12)
+            <Field label="리셋 몇 시간 전에 알릴지 (1~12)">
               <input
                 type="number" min={1} max={12} value={draft.daily_quest_remind_hours_before}
                 disabled={!draft.daily_quest_enabled}
@@ -122,7 +121,7 @@ export function NotificationSettings() {
                   set({ daily_quest_remind_hours_before: Number.isFinite(v) ? clamp(Math.trunc(v), 1, 12) : 1 })
                 }}
               />
-            </label>
+            </Field>
           </section>
 
           <Button variant="primary" onClick={() => void save()} disabled={busy}>저장</Button>

@@ -5,6 +5,7 @@ import { RARITIES, RARITY_LABEL, RATE_PER_LEVEL, MAX_NODE_LEVEL } from '../game/
 import { eggHatchSec } from '../game/durations'
 import { formatDuration } from '../game/format'
 import { Button } from '../components/ui/Button'
+import { Field } from '../components/ui/Field'
 import type { Rarity } from '../game/types'
 
 function LevelRow({ label, value, ratePct, onChange, note }: {
@@ -69,17 +70,17 @@ export function AccountSettings() {
       <Link to={`/account/${draft.id}`}>← 돌아가기</Link>
       <h1>계정 설정</h1>
 
-      <label>계정명
+      <Field label="계정명">
         <input value={draft.nickname} onChange={e => set({ nickname: e.target.value })} />
-      </label>
+      </Field>
 
-      <label>현재 대장간 레벨
+      <Field label="현재 대장간 레벨">
         <input type="number" min={1} max={35} value={draft.forge_level}
           onChange={e => {
             const v = Number(e.target.value)
             set({ forge_level: Number.isFinite(v) ? Math.min(35, Math.max(1, Math.trunc(v))) : 1 })
           }} />
-      </label>
+      </Field>
 
       <h2>단축·할인 노드 (0~25)</h2>
       <LevelRow label="제련 타이머" value={draft.forge_speed_lv} ratePct={RATE_PER_LEVEL.forgeSpeed}
@@ -101,18 +102,18 @@ export function AccountSettings() {
       ))}
 
       <h2>수급률 (선택)</h2>
-      <label>분당 골드
+      <Field label="분당 골드">
         <input type="number" value={draft.gold_per_min ?? ''}
           onChange={e => set({ gold_per_min: e.target.value === '' ? null : Number(e.target.value) })} />
-      </label>
-      <label>분당 망치
+      </Field>
+      <Field label="분당 망치">
         <input type="number" value={draft.hammer_per_min ?? ''}
           onChange={e => set({ hammer_per_min: e.target.value === '' ? null : Number(e.target.value) })} />
-      </label>
-      <label>일일 물약
+      </Field>
+      <Field label="일일 물약">
         <input type="number" value={draft.potion_per_day ?? ''}
           onChange={e => set({ potion_per_day: e.target.value === '' ? null : Number(e.target.value) })} />
-      </label>
+      </Field>
 
       <Button variant="primary" onClick={() => void save()}>저장</Button>
       {saved && <span style={{ color: 'var(--success)' }}>저장됨</span>}

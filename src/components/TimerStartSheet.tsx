@@ -9,6 +9,7 @@ import { toConfig, type AccountRow } from '../hooks/useAccounts'
 import { subscribePush } from '../lib/push'
 import { useNotificationStatus } from '../hooks/useNotificationStatus'
 import { Button } from './ui/Button'
+import { Field } from './ui/Field'
 import { GameIcon } from './ui/GameIcon'
 import type { Rarity } from '../game/types'
 
@@ -156,21 +157,19 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
               ))}
             </select>
 
-            <label>
-              티어
+            <Field label="티어">
               <select value={tier} onChange={e => setTier(Number(e.target.value))}>
                 {[1, 2, 3, 4, 5].map(t => (
                   <option key={t} value={t}>{TIER_LABEL[t - 1]}</option>
                 ))}
               </select>
-            </label>
+            </Field>
 
-            <label>
-              몇 번째 업그레이드
+            <Field label="몇 번째 업그레이드">
               <select value={level} onChange={e => setLevel(Number(e.target.value))}>
                 {[1, 2, 3, 4, 5].map(l => <option key={l} value={l}>{l}/5</option>)}
               </select>
-            </label>
+            </Field>
           </fieldset>
         )}
 
