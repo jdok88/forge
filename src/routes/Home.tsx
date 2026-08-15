@@ -79,6 +79,9 @@ function InstallNudge() {
       <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
         앱을 설치하면 타이머가 끝나는 순간 바로 알림이 울립니다. 웹은 최대 10초 늦을 수 있습니다.
       </p>
+      <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+        스토어를 거치지 않은 앱이라 기기에 따라 설치가 막힐 수 있습니다. 그럴 땐 웹으로 계속 사용하시면 됩니다.
+      </p>
       <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
         <a
           href={APK_RELEASE_PAGE}

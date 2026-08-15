@@ -226,6 +226,9 @@ export function InstallGuide() {
           <p style={{ color: 'var(--text-dim)' }}>
             앱을 설치하면 타이머가 끝나는 순간 바로 알림이 울립니다. 웹은 최대 10초 늦을 수 있습니다.
           </p>
+          <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+            스토어를 거치지 않은 앱이라 기기에 따라 설치가 막힐 수 있습니다. 그럴 땐 웹으로 계속 사용하시면 됩니다.
+          </p>
           <a
             href={APK_RELEASE_PAGE}
             target="_blank"
@@ -239,6 +242,7 @@ export function InstallGuide() {
         <section>
           <h2>웹으로 계속 사용</h2>
           <p style={{ color: 'var(--text-dim)' }}>
+            웹 버전도 기능은 동일합니다. 차이는 알림이 최대 10초 늦게 올 수 있다는 것뿐입니다.
             아래 버튼을 누르고 알림을 허용하면 됩니다. 홈 화면에 추가하면 더 안정적입니다.
           </p>
           <PushEnableSection {...pushEnableProps} />
