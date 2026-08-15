@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { DurationInput } from './DurationInput'
 import { RARITIES, RARITY_LABEL } from '../game/constants'
-import { TECH_NODES, BRANCH_LABEL } from '../game/nodes'
+import { TECH_NODES, BRANCH_LABEL, calcFieldForNode } from '../game/nodes'
 import { eggHatchSec, techDuration, forgeDuration, isForgeFreeSkip } from '../game/durations'
 import { gemsToSkip } from '../game/formulas'
 import { startTimer, type TimerKind } from '../hooks/useTimers'
@@ -14,6 +15,16 @@ import { GameIcon } from './ui/GameIcon'
 import type { Rarity } from '../game/types'
 
 const TIER_LABEL = ['I', 'II', 'III', 'IV', 'V'] as const
+
+/** 계산에 쓰이는 노드 레벨이 0단계일 때 보여주는 안내 — 에러가 아니라 정보성 힌트 */
+function ZeroLevelHint({ accountId, message }: { accountId: string; message: string }) {
+  return (
+    <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+      {message}{' '}
+      <Link to={`/account/${accountId}/settings`}>계정별 상세설정</Link>
+    </p>
+  )
+}
 
 interface Props {
   account: AccountRow
@@ -133,6 +144,12 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
                 </button>
               ))}
             </div>
+            {cfg.eggSpeedLv[rarity] === 0 && (
+              <ZeroLevelHint
+                accountId={account.id}
+                message={`${RARITY_LABEL[rarity]} 알 타이머 노드가 0단계입니다. 게임에서 올렸다면 등록해 주세요.`}
+              />
+            )}
           </fieldset>
         )}
 
@@ -152,10 +169,16 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
             <select value={nodeId} onChange={e => setNodeId(e.target.value)}>
               {TECH_NODES.map(n => (
                 <option key={n.id} value={n.id}>
-                  [{BRANCH_LABEL[n.branch]}] {n.name}
+                  {calcFieldForNode(n.id) ? '⏱ ' : ''}[{BRANCH_LABEL[n.branch]}] {n.name}
                 </option>
               ))}
             </select>
+            <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+              ⏱ 표시된 노드는 타이머 계산에 반영됩니다.
+            </p>
+            {cfg.techSpeedLv === 0 && (
+              <ZeroLevelHint accountId={account.id} message="기술 연구 타이머 노드가 0단계입니다. 게임에서 올렸다면 등록해 주세요." />
+            )}
 
             <Field label="티어">
               <select value={tier} onChange={e => setTier(Number(e.target.value))}>
@@ -174,11 +197,16 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
         )}
 
         {kind === 'forge' && (
-          <p>
-            대장간 {account.forge_level} → <strong>{targetForgeLevel}</strong>
-            {forgeMaxed && ' — 이미 최대 레벨입니다. 승천 후 레벨을 1로 되돌리세요.'}
-            {forgeFree && ' — 게임에서 무료 즉시완료가 가능한 구간입니다.'}
-          </p>
+          <>
+            <p>
+              대장간 {account.forge_level} → <strong>{targetForgeLevel}</strong>
+              {forgeMaxed && ' — 이미 최대 레벨입니다. 승천 후 레벨을 1로 되돌리세요.'}
+              {forgeFree && ' — 게임에서 무료 즉시완료가 가능한 구간입니다.'}
+            </p>
+            {cfg.forgeSpeedLv === 0 && (
+              <ZeroLevelHint accountId={account.id} message="제련 타이머 노드가 0단계입니다. 게임에서 올렸다면 등록해 주세요." />
+            )}
+          </>
         )}
 
         {/* 3단계 — 시간 확인·수정 */}
