@@ -1,10 +1,33 @@
-import type { Branch } from './types'
+import type { Branch, Rarity } from './types'
 
 export interface TechNode {
   id: string
   branch: Branch
   name: string
   effect: string
+}
+
+/** 노드 하나가 계정의 어느 계산 필드를 움직이는지 */
+export type CalcField =
+  | { kind: 'column'; column: 'forge_speed_lv' | 'forge_cost_lv' | 'tech_speed_lv' | 'tech_cost_lv' }
+  | { kind: 'egg'; rarity: Rarity }
+
+/** 타이머 계산에 직접 반영되는 열 개 노드 → 계정 필드 매핑 */
+export const CALC_NODE_FIELD: Record<string, CalcField> = {
+  forge_timer: { kind: 'column', column: 'forge_speed_lv' },
+  forge_cost: { kind: 'column', column: 'forge_cost_lv' },
+  tech_timer: { kind: 'column', column: 'tech_speed_lv' },
+  tech_cost: { kind: 'column', column: 'tech_cost_lv' },
+  egg_timer_common: { kind: 'egg', rarity: 'common' },
+  egg_timer_rare: { kind: 'egg', rarity: 'rare' },
+  egg_timer_epic: { kind: 'egg', rarity: 'epic' },
+  egg_timer_legendary: { kind: 'egg', rarity: 'legendary' },
+  egg_timer_ultimate: { kind: 'egg', rarity: 'ultimate' },
+  egg_timer_mythic: { kind: 'egg', rarity: 'mythic' },
+}
+
+export function calcFieldForNode(nodeId: string): CalcField | null {
+  return CALC_NODE_FIELD[nodeId] ?? null
 }
 
 export const BRANCH_LABEL: Record<Branch, string> = {

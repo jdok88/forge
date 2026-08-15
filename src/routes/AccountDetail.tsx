@@ -5,7 +5,8 @@ import { useTimers, startTimer, completeTimer, cancelTimer, type TimerKind } fro
 import { useDailyQuests } from '../hooks/useDailyQuests'
 import { DAILY_QUESTS } from '../game/quests'
 import { eggHatchSec, forgeDuration, isForgeFreeSkip } from '../game/durations'
-import { RARITY_LABEL } from '../game/constants'
+import { RARITY_LABEL, MAX_NODE_LEVEL } from '../game/constants'
+import { TECH_NODES, calcFieldForNode } from '../game/nodes'
 import type { Rarity } from '../game/types'
 import { SlotCard } from '../components/SlotCard'
 import { TimerStartSheet } from '../components/TimerStartSheet'
@@ -19,6 +20,14 @@ type TabKey = 'pet' | 'tech' | 'forge' | 'quest'
 type ContinuePrompt =
   | { kind: 'egg'; slot: number; rarity: Rarity }
   | { kind: 'forge'; slot: number; newLevel: number }
+  | { kind: 'tech'; slot: number; message: string }
+
+/** 한글 체언 뒤 이/가 조사 선택 — 받침 있으면 '이', 없으면 '가' */
+function josaGa(word: string): '이' | '가' {
+  const code = word.charCodeAt(word.length - 1) - 0xac00
+  if (code < 0 || code > 11171) return '가'
+  return code % 28 === 0 ? '가' : '이'
+}
 
 export function AccountDetail() {
   const { id } = useParams<{ id: string }>()
@@ -52,10 +61,32 @@ export function AccountDetail() {
     const t = timers.find(x => x.id === timerId)
     setActionError(null)
     try {
-      // 레벨을 먼저 올린다. forge_level 에 절대값을 쓰므로 재시도해도 중복 증가가 없다.
+      // 레벨을 먼저 올린다. 절대값을 쓰므로 재시도해도 중복 증가가 없다.
       if (t?.kind === 'forge' && account) {
         await updateAccount(account.id, { forge_level: t.meta.targetLevel as number })
         await reloadAccounts()
+      }
+      let techBumpMessage: string | null = null
+      if (t?.kind === 'tech' && account) {
+        const nodeId = t.meta.nodeId as string
+        const field = calcFieldForNode(nodeId)
+        if (field) {
+          const tier = t.meta.tier as number
+          const level = t.meta.level as number
+          const newLevel = Math.min(MAX_NODE_LEVEL, Math.max(0, (tier - 1) * 5 + level))
+          const currentLevel = field.kind === 'column' ? account[field.column] : account.egg_speed_lv[field.rarity]
+          // 이미 반영된 레벨보다 낮게는 절대 내리지 않는다 — 순서 없는 연구·수동 설정을 덮어쓰면 안 되므로
+          if (newLevel > currentLevel) {
+            if (field.kind === 'column') {
+              await updateAccount(account.id, { [field.column]: newLevel })
+            } else {
+              await updateAccount(account.id, { egg_speed_lv: { ...account.egg_speed_lv, [field.rarity]: newLevel } })
+            }
+            await reloadAccounts()
+            const nodeName = TECH_NODES.find(n => n.id === nodeId)?.name ?? '노드'
+            techBumpMessage = `${nodeName}${josaGa(nodeName)} ${newLevel}단계로 반영되었습니다.`
+          }
+        }
       }
       await completeTimer(timerId)
       await reload()
@@ -63,6 +94,8 @@ export function AccountDetail() {
         setContinuePrompt({ kind: 'egg', slot: t.slot, rarity: t.meta.rarity as Rarity })
       } else if (t?.kind === 'forge') {
         setContinuePrompt({ kind: 'forge', slot: t.slot, newLevel: t.meta.targetLevel as number })
+      } else if (t && techBumpMessage) {
+        setContinuePrompt({ kind: 'tech', slot: t.slot, message: techBumpMessage })
       }
     } catch (e) {
       setActionError(e instanceof Error ? e.message : '완료 처리에 실패했습니다.')
@@ -179,16 +212,27 @@ export function AccountDetail() {
         </>
       )}
 
-      {tab === 'tech' && (
-        <>
-          <h2>기술 연구</h2>
-          <SlotCard
-            label="연구" timer={find('tech', 1)}
-            onStart={() => setSheet({ kind: 'tech', slot: 1 })}
-            onComplete={onComplete} onCancel={onCancel} onElapsed={reload}
-          />
-        </>
-      )}
+      {tab === 'tech' && (() => {
+        const techPrompt = continuePrompt?.kind === 'tech' && continuePrompt.slot === 1
+          ? {
+              message: continuePrompt.message,
+              onDismiss: () => setContinuePrompt(null),
+              disabled: continueBusy,
+            }
+          : undefined
+
+        return (
+          <>
+            <h2>기술 연구</h2>
+            <SlotCard
+              label="연구" timer={find('tech', 1)}
+              onStart={() => setSheet({ kind: 'tech', slot: 1 })}
+              onComplete={onComplete} onCancel={onCancel} onElapsed={reload}
+              continuePrompt={techPrompt}
+            />
+          </>
+        )
+      })()}
 
       {tab === 'forge' && (() => {
         const forgePrompt = continuePrompt?.kind === 'forge' && continuePrompt.slot === 1
