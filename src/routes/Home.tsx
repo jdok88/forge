@@ -218,7 +218,7 @@ export function Home() {
 
                     {finished.length > 0 && (
                       <>
-                        <SectionTitle>완료 · 확인 필요 ({finished.length})</SectionTitle>
+                        <SectionTitle>완료 대기 ({finished.length})</SectionTitle>
                         <div style={{ borderLeft: '2px solid var(--success)', paddingLeft: 'var(--sp-2)' }}>
                           {finished.map(t => <TimerLine key={t.id} t={t} />)}
                         </div>

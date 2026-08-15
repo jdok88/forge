@@ -99,9 +99,11 @@ export function SlotCard({
   }
 
   const remain = Math.floor((new Date(timer.ends_at).getTime() - Date.now()) / 1000)
+  // 시간이 다 지났지만 아직 완료 처리(젬·자원 반영)를 확인하지 않은 상태 — 즉시완료(진행 중 조기 종료)와는 다른 액션이다
+  const awaitingConfirm = remain <= 0
 
   return (
-    <Card style={{ marginBottom: 'var(--sp-2)' }}>
+    <Card style={{ marginBottom: 'var(--sp-2)', ...(awaitingConfirm ? { border: '1px solid var(--success)' } : {}) }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
         <GameIcon icon={timerIcon(timer)} alt={describe(timer)} size="sm" />
         <div>
@@ -110,13 +112,15 @@ export function SlotCard({
         </div>
       </div>
       <Countdown endsAt={timer.ends_at} onElapsed={onElapsed} />
-      {remain > 0 && (
+      {!awaitingConfirm && (
         <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
           즉시완료 젬 {gemsToSkip(remain).toLocaleString()}
         </div>
       )}
       <div style={{ display: 'flex', gap: 'var(--sp-2)', marginTop: 'var(--sp-2)' }}>
-        <Button variant="primary" size="sm" onClick={() => onComplete(timer.id)}>완료</Button>
+        <Button variant="primary" size="sm" onClick={() => onComplete(timer.id)}>
+          {awaitingConfirm ? '완료' : '즉시완료'}
+        </Button>
         <Button variant="danger" size="sm" onClick={() => onCancel(timer.id)}>취소</Button>
       </div>
     </Card>

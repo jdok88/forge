@@ -18,7 +18,7 @@ export function Countdown({ endsAt, onElapsed }: { endsAt: string; onElapsed?: (
 
   return (
     <span style={{ fontVariantNumeric: 'tabular-nums', color: sec <= 0 ? 'var(--success)' : 'var(--text)' }}>
-      {sec <= 0 ? '완료' : formatCountdown(sec)}
+      {sec <= 0 ? '완료 대기' : formatCountdown(sec)}
     </span>
   )
 }
