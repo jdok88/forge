@@ -1,6 +1,6 @@
 import { TECH_NODES } from './nodes'
 import { techDuration, forgeDuration } from './durations'
-import { formatDuration } from './format'
+import { formatDuration, formatAmount } from './format'
 import { FORGE_MAX_LEVEL } from './constants'
 import type { AccountConfig } from './types'
 
@@ -31,7 +31,7 @@ export function nextStepLine(t: RunningTimer, cfg: AccountConfig): NextStepInfo 
     const r = techDuration(nextTier, nextLevel, cfg)
     return {
       lead: '다음에도 같은 기술을 올리려면',
-      detail: `${node?.name ?? '기술'} ${TIER_LABEL[nextTier - 1]} ${nextLevel}/5 · 물약 ${r.potions.toLocaleString()} · ${formatDuration(r.sec)}`,
+      detail: `${node?.name ?? '기술'} ${TIER_LABEL[nextTier - 1]} ${nextLevel}/5 · 물약 ${formatAmount(r.potions)} · ${formatDuration(r.sec)}`,
     }
   }
   if (t.kind === 'forge') {
@@ -40,7 +40,7 @@ export function nextStepLine(t: RunningTimer, cfg: AccountConfig): NextStepInfo 
     const r = forgeDuration(nextTarget, cfg)
     return {
       lead: '다음 레벨을 올리려면',
-      detail: `대장간 ${nextTarget}레벨 · 골드 ${r.gold.toLocaleString()} · ${formatDuration(r.sec)}`,
+      detail: `대장간 ${nextTarget}레벨 · 골드 ${formatAmount(r.gold)} · ${formatDuration(r.sec)}`,
     }
   }
   return null

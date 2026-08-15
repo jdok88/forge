@@ -35,7 +35,7 @@ describe('nextStepLine', () => {
     const line = nextStepLine({ kind: 'forge', meta: { targetLevel: 12 } }, VANILLA)
     expect(line).toEqual({
       lead: '다음 레벨을 올리려면',
-      detail: '대장간 13레벨 · 골드 450,000 · 1일 16시간 53분',
+      detail: '대장간 13레벨 · 골드 450k · 1일 16시간 53분',
     })
   })
 

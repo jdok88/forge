@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDuration, formatCountdown, questDateKst, nextQuestResetAt } from '../../src/game/format'
+import { formatDuration, formatCountdown, formatAmount, questDateKst, nextQuestResetAt } from '../../src/game/format'
 
 describe('formatDuration', () => {
   it('일/시/분을 조합한다', () => {
@@ -16,6 +16,28 @@ describe('formatDuration', () => {
   })
   it('음수도 곧으로 처리한다', () => {
     expect(formatDuration(-100)).toBe('곧')
+  })
+})
+
+describe('formatAmount', () => {
+  it('1000 미만은 그대로', () => {
+    expect(formatAmount(115)).toBe('115')
+    expect(formatAmount(999)).toBe('999')
+  })
+  it('1000 이상 100만 미만은 k 단위, 유효숫자 3자리', () => {
+    expect(formatAmount(1000)).toBe('1k')
+    expect(formatAmount(1050)).toBe('1.05k')
+    expect(formatAmount(83_300)).toBe('83.3k')
+    expect(formatAmount(450_000)).toBe('450k')
+  })
+  it('100만 이상은 m 단위, 유효숫자 3자리', () => {
+    expect(formatAmount(3_000_000)).toBe('3m')
+    expect(formatAmount(1_130_000)).toBe('1.13m')
+  })
+  it('음수·비유한값은 0', () => {
+    expect(formatAmount(-1)).toBe('0')
+    expect(formatAmount(NaN)).toBe('0')
+    expect(formatAmount(Infinity)).toBe('0')
   })
 })
 

@@ -14,6 +14,26 @@ export function formatDuration(sec: number): string {
   return parts.join(' ')
 }
 
+/** value(>0)를 유효숫자 3자리로 반올림한 숫자를 돌려준다 — Number() 변환이 불필요한 trailing 0/소수점을 자동으로 없애 준다 */
+function roundSig3(value: number): number {
+  if (value === 0) return 0
+  const digits = Math.floor(Math.log10(value)) + 1
+  const decimals = Math.max(0, 3 - digits)
+  return Number(value.toFixed(decimals))
+}
+
+/** 골드·물약 같은 자원 수량을 게임 내 표기(83.3k, 3m 등)와 맞춰 유효숫자 약 3자리로 축약한다 */
+export function formatAmount(n: number): string {
+  if (!Number.isFinite(n) || n < 0) return '0'
+  if (n < 1000) return String(Math.floor(n))
+  if (n < 1_000_000) {
+    const k = roundSig3(n / 1000)
+    if (k >= 1000) return `${roundSig3(k / 1000)}m`
+    return `${k}k`
+  }
+  return `${roundSig3(n / 1_000_000)}m`
+}
+
 const pad = (n: number) => String(n).padStart(2, '0')
 
 export function formatCountdown(sec: number): string {

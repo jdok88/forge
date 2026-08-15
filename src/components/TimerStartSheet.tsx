@@ -36,16 +36,13 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
 
   const targetForgeLevel = account.forge_level + 1
 
-  // 자동 계산값
+  // 자동 계산값 — 골드·물약 비용은 타이머를 등록하는 시점엔 이미 게임에서 소모된 값이라 여기서는 보여주지 않는다.
+  // (다음 단계 비용은 진행 중 타이머 아래 미리보기에서 확인한다)
   const auto = useMemo(() => {
-    if (kind === 'egg') return { sec: eggHatchSec(rarity, cfg), cost: null as string | null }
-    if (kind === 'tech') {
-      const r = techDuration(tier, level, cfg)
-      return { sec: r.sec, cost: `물약 ${r.potions.toLocaleString()}` }
-    }
-    if (targetForgeLevel > 35) return { sec: 0, cost: null }
-    const r = forgeDuration(targetForgeLevel, cfg)
-    return { sec: r.sec, cost: `골드 ${r.gold.toLocaleString()}` }
+    if (kind === 'egg') return { sec: eggHatchSec(rarity, cfg) }
+    if (kind === 'tech') return { sec: techDuration(tier, level, cfg).sec }
+    if (targetForgeLevel > 35) return { sec: 0 }
+    return { sec: forgeDuration(targetForgeLevel, cfg).sec }
   }, [kind, rarity, tier, level, cfg, targetForgeLevel])
 
   // 3단계: 자동값으로 채우되, 손댄 뒤에는 덮어쓰지 않는다
@@ -205,7 +202,6 @@ export function TimerStartSheet({ account, kind, slot, onDone, onCancel }: Props
         {/* 3단계 — 시간 확인·수정 */}
         {!forgeMaxed && (
           <>
-            {auto.cost && <p>필요 자원: {auto.cost}</p>}
             <DurationInput
               value={sec}
               autoSec={auto.sec}
