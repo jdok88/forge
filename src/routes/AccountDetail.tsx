@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useAccounts, updateAccount } from '../hooks/useAccounts'
-import { useTimers, completeTimer, cancelTimer, type TimerKind } from '../hooks/useTimers'
+import { useAccounts, updateAccount, toConfig } from '../hooks/useAccounts'
+import { useTimers, startTimer, completeTimer, cancelTimer, type TimerKind } from '../hooks/useTimers'
 import { useDailyQuests } from '../hooks/useDailyQuests'
 import { DAILY_QUESTS } from '../game/quests'
+import { eggHatchSec } from '../game/durations'
+import { RARITY_LABEL } from '../game/constants'
+import type { Rarity } from '../game/types'
 import { SlotCard } from '../components/SlotCard'
 import { TimerStartSheet } from '../components/TimerStartSheet'
 import { DailyQuests } from '../components/DailyQuests'
@@ -20,6 +23,7 @@ export function AccountDetail() {
   const [sheet, setSheet] = useState<{ kind: TimerKind; slot: number } | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [tab, setTab] = useState<TabKey>('pet')
+  const [copyingSlot, setCopyingSlot] = useState<number | null>(null)
 
   const account = accounts.find(a => a.id === id)
   if (!account) return <p>계정을 찾을 수 없습니다.</p>
@@ -63,6 +67,21 @@ export function AccountDetail() {
     }
   }
 
+  async function onCopyPreviousEgg(slot: number, rarity: Rarity) {
+    if (!account) return
+    setActionError(null)
+    setCopyingSlot(slot)
+    try {
+      const sec = eggHatchSec(rarity, toConfig(account))
+      await startTimer({ accountId: account.id, kind: 'egg', slot, meta: { rarity }, sec, autoSec: sec })
+      await reload()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : '복사 시작에 실패했습니다.')
+    } finally {
+      setCopyingSlot(null)
+    }
+  }
+
   return (
     <div>
       <Link to="/">← 홈</Link>
@@ -77,13 +96,25 @@ export function AccountDetail() {
       {tab === 'pet' && (
         <>
           <h2>펫 부화</h2>
-          {EGG_SLOTS.map(slot => (
-            <SlotCard
-              key={slot} label={`슬롯 ${slot}`} timer={find('egg', slot)}
-              onStart={() => setSheet({ kind: 'egg', slot })}
-              onComplete={onComplete} onCancel={onCancel} onElapsed={reload}
-            />
-          ))}
+          {EGG_SLOTS.map(slot => {
+            const timer = find('egg', slot)
+            const prev = slot > 1 ? find('egg', slot - 1) : undefined
+            const copyAction = !timer && prev
+              ? {
+                  label: `슬롯 ${slot - 1} 복사 (${RARITY_LABEL[prev.meta.rarity as Rarity]})`,
+                  onClick: () => void onCopyPreviousEgg(slot, prev.meta.rarity as Rarity),
+                  disabled: copyingSlot === slot,
+                }
+              : undefined
+            return (
+              <SlotCard
+                key={slot} label={`슬롯 ${slot}`} timer={timer}
+                onStart={() => setSheet({ kind: 'egg', slot })}
+                onComplete={onComplete} onCancel={onCancel} onElapsed={reload}
+                copyAction={copyAction}
+              />
+            )
+          })}
         </>
       )}
 

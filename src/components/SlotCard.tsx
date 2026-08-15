@@ -28,6 +28,12 @@ export function timerIcon(t: TimerRow): GameIconSpec {
   return { kind: 'forge' }
 }
 
+interface CopyAction {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+}
+
 interface Props {
   label: string
   timer?: TimerRow
@@ -35,15 +41,24 @@ interface Props {
   onComplete: (id: string) => void
   onCancel: (id: string) => void
   onElapsed: () => void
+  /** 빈 슬롯에서 이전 슬롯 값을 복사해 바로 시작하는 보조 버튼 */
+  copyAction?: CopyAction
 }
 
-export function SlotCard({ label, timer, onStart, onComplete, onCancel, onElapsed }: Props) {
+export function SlotCard({ label, timer, onStart, onComplete, onCancel, onElapsed, copyAction }: Props) {
   if (!timer) {
     return (
       <Card style={{ marginBottom: 'var(--sp-2)' }}>
         <div style={{ color: 'var(--text-dim)' }}>{label}</div>
         <div style={{ color: 'var(--text-dim)' }}>비어 있음</div>
-        <Button onClick={onStart}>시작</Button>
+        <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+          <Button onClick={onStart}>시작</Button>
+          {copyAction && (
+            <Button variant="ghost" onClick={copyAction.onClick} disabled={copyAction.disabled}>
+              {copyAction.label}
+            </Button>
+          )}
+        </div>
       </Card>
     )
   }
