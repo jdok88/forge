@@ -313,11 +313,13 @@ export function Home() {
           .filter(n => !existing.has(String(n)))
         const full = available.length === 0
 
+        const isFirstServer = servers.length === 0
+
         return (
           <Card style={{ marginTop: 'var(--sp-6)' }}>
-            <SectionTitle>다른 서버 추가</SectionTitle>
+            <SectionTitle>{isFirstServer ? '서버 선택' : '다른 서버 추가'}</SectionTitle>
             <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
-              다른 서버에서도 플레이 중이라면 서버를 추가하세요.
+              {isFirstServer ? '플레이 중인 서버를 선택하세요.' : '다른 서버에서도 플레이 중이라면 서버를 추가하세요.'}
             </p>
             <form onSubmit={async e => {
               e.preventDefault()
