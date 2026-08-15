@@ -170,9 +170,9 @@ export function NotificationSettings() {
           <SectionTitle>알림</SectionTitle>
 
           <section>
-            <h2>완료 전 추가 알림</h2>
+            <h2>완료 전 사전 알림</h2>
             <Card style={{ border: '1px solid var(--accent)', marginBottom: 'var(--sp-2)' }}>
-              <Badge variant="accent">추가 알림</Badge>
+              <Badge variant="accent">사전 알림</Badge>
               <p style={{ margin: 'var(--sp-1) 0 0' }}>
                 완료 알림은 설정과 관계없이 항상 옵니다. 이 설정은 그보다 <strong>먼저</strong> 한 번 더 알려주는 추가 알림입니다.
               </p>
