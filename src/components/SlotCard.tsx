@@ -34,6 +34,16 @@ interface CopyAction {
   disabled?: boolean
 }
 
+interface ContinuePrompt {
+  message: string
+  /** 확인 버튼 라벨. 없으면 이어서 시작할 수 없는 상태(예: 최대 레벨)로, 확인 버튼 없이 note만 보여준다. */
+  confirmLabel?: string
+  onConfirm?: () => void
+  onDismiss: () => void
+  disabled?: boolean
+  note?: string
+}
+
 interface Props {
   label: string
   timer?: TimerRow
@@ -43,10 +53,35 @@ interface Props {
   onElapsed: () => void
   /** 빈 슬롯에서 이전 슬롯 값을 복사해 바로 시작하는 보조 버튼 */
   copyAction?: CopyAction
+  /** 방금 완료한 슬롯에서 "이어서 시작할까요?" 를 묻는 인라인 프롬프트. 있으면 시작 버튼·copyAction 대신 렌더한다. */
+  continuePrompt?: ContinuePrompt
 }
 
-export function SlotCard({ label, timer, onStart, onComplete, onCancel, onElapsed, copyAction }: Props) {
+export function SlotCard({
+  label, timer, onStart, onComplete, onCancel, onElapsed, copyAction, continuePrompt,
+}: Props) {
   if (!timer) {
+    if (continuePrompt) {
+      return (
+        <Card style={{ marginBottom: 'var(--sp-2)', border: '1px solid var(--success)' }}>
+          <div style={{ color: 'var(--text-dim)' }}>{label}</div>
+          <p>{continuePrompt.message}</p>
+          {continuePrompt.note && (
+            <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>{continuePrompt.note}</p>
+          )}
+          <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+            {continuePrompt.onConfirm && (
+              <Button variant="primary" onClick={continuePrompt.onConfirm} disabled={continuePrompt.disabled}>
+                {continuePrompt.confirmLabel}
+              </Button>
+            )}
+            <Button variant="ghost" onClick={continuePrompt.onDismiss} disabled={continuePrompt.disabled}>
+              {continuePrompt.onConfirm ? '아니요' : '확인'}
+            </Button>
+          </div>
+        </Card>
+      )
+    }
     return (
       <Card style={{ marginBottom: 'var(--sp-2)' }}>
         <div style={{ color: 'var(--text-dim)' }}>{label}</div>

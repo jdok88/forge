@@ -4,7 +4,7 @@ import { useAccounts, updateAccount, toConfig } from '../hooks/useAccounts'
 import { useTimers, startTimer, completeTimer, cancelTimer, type TimerKind } from '../hooks/useTimers'
 import { useDailyQuests } from '../hooks/useDailyQuests'
 import { DAILY_QUESTS } from '../game/quests'
-import { eggHatchSec } from '../game/durations'
+import { eggHatchSec, forgeDuration, isForgeFreeSkip } from '../game/durations'
 import { RARITY_LABEL } from '../game/constants'
 import type { Rarity } from '../game/types'
 import { SlotCard } from '../components/SlotCard'
@@ -13,7 +13,12 @@ import { DailyQuests } from '../components/DailyQuests'
 import { TabBar, type TabDef } from '../components/ui/TabBar'
 
 const EGG_SLOTS = [1, 2, 3, 4]
+const FORGE_MAX_LEVEL = 35
 type TabKey = 'pet' | 'tech' | 'forge' | 'quest'
+
+type ContinuePrompt =
+  | { kind: 'egg'; slot: number; rarity: Rarity }
+  | { kind: 'forge'; slot: number; newLevel: number }
 
 export function AccountDetail() {
   const { id } = useParams<{ id: string }>()
@@ -24,6 +29,8 @@ export function AccountDetail() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [tab, setTab] = useState<TabKey>('pet')
   const [copyingSlot, setCopyingSlot] = useState<number | null>(null)
+  const [continuePrompt, setContinuePrompt] = useState<ContinuePrompt | null>(null)
+  const [continueBusy, setContinueBusy] = useState(false)
 
   const account = accounts.find(a => a.id === id)
   if (!account) return <p>계정을 찾을 수 없습니다.</p>
@@ -52,6 +59,11 @@ export function AccountDetail() {
       }
       await completeTimer(timerId)
       await reload()
+      if (t?.kind === 'egg') {
+        setContinuePrompt({ kind: 'egg', slot: t.slot, rarity: t.meta.rarity as Rarity })
+      } else if (t?.kind === 'forge') {
+        setContinuePrompt({ kind: 'forge', slot: t.slot, newLevel: t.meta.targetLevel as number })
+      }
     } catch (e) {
       setActionError(e instanceof Error ? e.message : '완료 처리에 실패했습니다.')
     }
@@ -82,6 +94,41 @@ export function AccountDetail() {
     }
   }
 
+  async function onContinueEgg(slot: number, rarity: Rarity) {
+    if (!account) return
+    setActionError(null)
+    setContinueBusy(true)
+    try {
+      const sec = eggHatchSec(rarity, toConfig(account))
+      await startTimer({ accountId: account.id, kind: 'egg', slot, meta: { rarity }, sec, autoSec: sec })
+      setContinuePrompt(null)
+      await reload()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : '이어서 부화 시작에 실패했습니다.')
+    } finally {
+      setContinueBusy(false)
+    }
+  }
+
+  async function onContinueForge(slot: number, nextLevel: number) {
+    if (!account) return
+    setActionError(null)
+    setContinueBusy(true)
+    try {
+      const r = forgeDuration(nextLevel, toConfig(account))
+      await startTimer({
+        accountId: account.id, kind: 'forge', slot,
+        meta: { targetLevel: nextLevel }, sec: r.sec, autoSec: r.sec,
+      })
+      setContinuePrompt(null)
+      await reload()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : '다음 레벨 시작에 실패했습니다.')
+    } finally {
+      setContinueBusy(false)
+    }
+  }
+
   return (
     <div>
       <Link to="/">← 홈</Link>
@@ -99,19 +146,33 @@ export function AccountDetail() {
           {EGG_SLOTS.map(slot => {
             const timer = find('egg', slot)
             const prev = slot > 1 ? find('egg', slot - 1) : undefined
-            const copyAction = !timer && prev
+
+            const continuePromptProp = continuePrompt?.kind === 'egg' && continuePrompt.slot === slot
+              ? {
+                  message: `방금 부화한 ${RARITY_LABEL[continuePrompt.rarity]} 알을 이어서 부화할까요?`,
+                  confirmLabel: '이어서 부화',
+                  onConfirm: () => void onContinueEgg(slot, continuePrompt.rarity),
+                  onDismiss: () => setContinuePrompt(null),
+                  disabled: continueBusy,
+                }
+              : undefined
+
+            // 방금 완료한 슬롯에 이어서-부화 프롬프트가 떠 있는 동안은 복사 버튼을 같이 보여주지 않는다
+            const copyAction = !timer && !continuePromptProp && prev
               ? {
                   label: `슬롯 ${slot - 1} 복사 (${RARITY_LABEL[prev.meta.rarity as Rarity]})`,
                   onClick: () => void onCopyPreviousEgg(slot, prev.meta.rarity as Rarity),
                   disabled: copyingSlot === slot,
                 }
               : undefined
+
             return (
               <SlotCard
                 key={slot} label={`슬롯 ${slot}`} timer={timer}
                 onStart={() => setSheet({ kind: 'egg', slot })}
                 onComplete={onComplete} onCancel={onCancel} onElapsed={reload}
                 copyAction={copyAction}
+                continuePrompt={continuePromptProp}
               />
             )
           })}
@@ -129,16 +190,41 @@ export function AccountDetail() {
         </>
       )}
 
-      {tab === 'forge' && (
-        <>
-          <h2>대장간 (레벨 {account.forge_level})</h2>
-          <SlotCard
-            label="업그레이드" timer={find('forge', 1)}
-            onStart={() => setSheet({ kind: 'forge', slot: 1 })}
-            onComplete={onComplete} onCancel={onCancel} onElapsed={reload}
-          />
-        </>
-      )}
+      {tab === 'forge' && (() => {
+        const forgePrompt = continuePrompt?.kind === 'forge' && continuePrompt.slot === 1
+          ? (() => {
+              const nextLevel = continuePrompt.newLevel + 1
+              if (nextLevel > FORGE_MAX_LEVEL) {
+                return {
+                  message: `대장간 ${continuePrompt.newLevel} 완료.`,
+                  note: '최대 레벨입니다. 승천 후 레벨을 1로 되돌리세요.',
+                  onDismiss: () => setContinuePrompt(null),
+                  disabled: continueBusy,
+                }
+              }
+              return {
+                message: `대장간 ${continuePrompt.newLevel} 완료. 다음 레벨(${nextLevel})을 바로 시작할까요?`,
+                note: isForgeFreeSkip(nextLevel) ? '게임에서 무료 즉시완료가 가능한 구간입니다.' : undefined,
+                confirmLabel: '다음 레벨 시작',
+                onConfirm: () => void onContinueForge(1, nextLevel),
+                onDismiss: () => setContinuePrompt(null),
+                disabled: continueBusy,
+              }
+            })()
+          : undefined
+
+        return (
+          <>
+            <h2>대장간 (레벨 {account.forge_level})</h2>
+            <SlotCard
+              label="업그레이드" timer={find('forge', 1)}
+              onStart={() => setSheet({ kind: 'forge', slot: 1 })}
+              onComplete={onComplete} onCancel={onCancel} onElapsed={reload}
+              continuePrompt={forgePrompt}
+            />
+          </>
+        )
+      })()}
 
       {tab === 'quest' && <DailyQuests accountId={account.id} />}
 
