@@ -181,45 +181,55 @@ export function Home() {
               }
 
               return (
-                <Card key={a.id} accentColor={a.color} style={{ marginBottom: 'var(--sp-2)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
-                    <Link to={`/account/${a.id}`} style={{
-                      flex: 1, color: a.color, fontWeight: 700, fontSize: 'var(--fs-md)',
-                      textDecoration: 'none',
+                <Card key={a.id} accentColor={a.color} style={{ marginBottom: 'var(--sp-2)', padding: 0, position: 'relative' }}>
+                  <Link to={`/account/${a.id}`} className="ui-account-link">
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
+                      paddingRight: 'calc(var(--sp-6) + var(--sp-5))',
                     }}>
-                      {a.nickname}
-                    </Link>
-                    <span style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-xs)' }}>{s.name}</span>
-                    <Link to={`/account/${a.id}/settings`} style={{ fontSize: 'var(--fs-sm)' }}>설정</Link>
-                  </div>
-
-                  {goldNote && (
-                    <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)', marginTop: 'var(--sp-1)' }}>
-                      {goldNote}
+                      <span style={{ flex: 1, color: a.color, fontWeight: 700, fontSize: 'var(--fs-md)' }}>
+                        {a.nickname}
+                      </span>
+                      <span style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-xs)' }}>{s.name}</span>
+                      <span style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-lg)', lineHeight: 1 }} aria-hidden="true">›</span>
                     </div>
-                  )}
 
-                  {running.length === 0 && finished.length === 0 && (
-                    <EmptyState message="진행 중인 타이머가 없습니다" />
-                  )}
-
-                  {running.length > 0 && (
-                    <>
-                      <SectionTitle>진행 중 ({running.length})</SectionTitle>
-                      <div>
-                        {running.map(t => <TimerLine key={t.id} t={t} />)}
+                    {goldNote && (
+                      <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)', marginTop: 'var(--sp-1)' }}>
+                        {goldNote}
                       </div>
-                    </>
-                  )}
+                    )}
 
-                  {finished.length > 0 && (
-                    <>
-                      <SectionTitle>완료 · 확인 필요 ({finished.length})</SectionTitle>
-                      <div style={{ borderLeft: '2px solid var(--success)', paddingLeft: 'var(--sp-2)' }}>
-                        {finished.map(t => <TimerLine key={t.id} t={t} />)}
-                      </div>
-                    </>
-                  )}
+                    {running.length === 0 && finished.length === 0 && (
+                      <EmptyState message="진행 중인 타이머가 없습니다" />
+                    )}
+
+                    {running.length > 0 && (
+                      <>
+                        <SectionTitle>진행 중 ({running.length})</SectionTitle>
+                        <div>
+                          {running.map(t => <TimerLine key={t.id} t={t} />)}
+                        </div>
+                      </>
+                    )}
+
+                    {finished.length > 0 && (
+                      <>
+                        <SectionTitle>완료 · 확인 필요 ({finished.length})</SectionTitle>
+                        <div style={{ borderLeft: '2px solid var(--success)', paddingLeft: 'var(--sp-2)' }}>
+                          {finished.map(t => <TimerLine key={t.id} t={t} />)}
+                        </div>
+                      </>
+                    )}
+                  </Link>
+
+                  <Link
+                    to={`/account/${a.id}/settings`}
+                    className="ui-account-settings-link"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    설정
+                  </Link>
                 </Card>
               )
             })}
