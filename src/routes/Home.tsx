@@ -3,9 +3,6 @@ import { Link } from 'react-router-dom'
 import { useAccounts, createServer, createAccount, deleteServer, toConfig } from '../hooks/useAccounts'
 import { useTimers, type TimerRow } from '../hooks/useTimers'
 import { useSession } from '../hooks/useSession'
-import { formatDuration } from '../game/format'
-import { forgeDuration } from '../game/durations'
-import { resourceEta } from '../game/eta'
 import { nextStepLine } from '../game/nextStep'
 import { RARITY_LABEL } from '../game/constants'
 import { TECH_NODES } from '../game/nodes'
@@ -271,14 +268,6 @@ export function Home() {
 
               const cfg = toConfig(a)
 
-              // 다음 대장간 레벨까지 골드 ETA — resourceEta 는 분당 단위이므로 초당 값을 60배해 변환한다
-              let goldNote: string | null = null
-              if (a.forge_level < 35 && a.gold_per_sec) {
-                const need = forgeDuration(a.forge_level + 1, cfg).gold
-                const min = resourceEta(need, 0, a.gold_per_sec * 60)
-                if (min !== null) goldNote = `0부터 모으면 ${formatDuration(min * 60)}`
-              }
-
               return (
                 <Card key={a.id} accentColor={a.color} style={{ marginBottom: 'var(--sp-2)', padding: 0, position: 'relative' }}>
                   <Link to={`/account/${a.id}`} className="ui-account-link">
@@ -291,12 +280,6 @@ export function Home() {
                       </span>
                       <span style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-lg)', lineHeight: 1 }} aria-hidden="true">›</span>
                     </div>
-
-                    {goldNote && (
-                      <div style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)', marginTop: 'var(--sp-1)' }}>
-                        {goldNote}
-                      </div>
-                    )}
 
                     {running.length === 0 && finished.length === 0 && (
                       <EmptyState message="진행 중인 타이머가 없습니다" />

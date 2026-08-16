@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useAccounts, updateAccount, toConfig } from '../hooks/useAccounts'
+import { useAccounts, updateAccount, toConfig, type AccountRow } from '../hooks/useAccounts'
 import { useTimers, startTimer, completeTimer, cancelTimer, type TimerKind, type TimerRow } from '../hooks/useTimers'
 import { useDailyQuests } from '../hooks/useDailyQuests'
 import { DAILY_QUESTS } from '../game/quests'
 import { eggHatchSec, forgeDuration, isForgeFreeSkip } from '../game/durations'
-import { formatCountdown, formatDuration } from '../game/format'
+import { formatCountdown, formatDuration, formatAmount } from '../game/format'
+import { resourceEta } from '../game/eta'
 import { RARITY_LABEL, MAX_NODE_LEVEL } from '../game/constants'
 import { TECH_NODES, calcFieldForNode } from '../game/nodes'
 import type { Rarity } from '../game/types'
@@ -29,6 +30,22 @@ function josaGa(word: string): '이' | '가' {
   const code = word.charCodeAt(word.length - 1) - 0xac00
   if (code < 0 || code > 11171) return '가'
   return code % 28 === 0 ? '가' : '이'
+}
+
+/**
+ * 다음 대장간 레벨에 필요한 골드와, 그만큼을 0에서부터 모으는 데 걸리는 시간.
+ * 초당 골드를 입력한 계정에만 보인다. resourceEta 는 분 단위이므로 초당 값을 60배해 넘긴다.
+ */
+function GoldEta({ account }: { account: AccountRow }) {
+  if (account.forge_level >= FORGE_MAX_LEVEL || !account.gold_per_sec) return null
+  const need = forgeDuration(account.forge_level + 1, toConfig(account)).gold
+  const min = resourceEta(need, 0, account.gold_per_sec * 60)
+  if (min === null) return null
+  return (
+    <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+      다음 레벨 골드 {formatAmount(need)} · 0부터 모으면 {formatDuration(min * 60)}
+    </p>
+  )
 }
 
 export function AccountDetail() {
@@ -274,6 +291,7 @@ export function AccountDetail() {
         return (
           <>
             <h2>대장간 (레벨 {account.forge_level})</h2>
+            <GoldEta account={account} />
             {account.forge_level === 1 && (
               <SettingsHint accountId={account.id} message="대장간 레벨이 1(기본값)입니다. 실제 레벨이 다르면 설정해 주세요." />
             )}
