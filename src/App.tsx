@@ -7,6 +7,7 @@ import { AccountDetail } from './routes/AccountDetail'
 import { AccountSettings } from './routes/AccountSettings'
 import { InstallGuide } from './routes/InstallGuide'
 import { NotificationSettings } from './routes/NotificationSettings'
+import { BottomBar } from './components/BottomBar'
 
 export default function App() {
   const { session, loading } = useSession()
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/install" element={<InstallGuide />} />
         <Route path="/notifications" element={<NotificationSettings />} />
       </Routes>
+      <BottomBar />
     </BrowserRouter>
   )
 }

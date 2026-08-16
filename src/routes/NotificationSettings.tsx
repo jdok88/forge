@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useIsAnonymous } from '../hooks/useIsAnonymous'
 import { GuestUpgradeForm } from '../components/GuestUpgradeForm'
@@ -169,7 +169,6 @@ export function NotificationSettings() {
 
   return (
     <div>
-      <Link to="/">← 홈</Link>
       <h1>추가기능 설정</h1>
 
       {loading && <p>불러오는 중…</p>}

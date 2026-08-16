@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useAccounts, updateAccount, deleteAccount, toConfig, type AccountRow } from '../hooks/useAccounts'
 import { useTimers } from '../hooks/useTimers'
 import { RARITIES, RARITY_LABEL, RATE_PER_LEVEL, MAX_NODE_LEVEL } from '../game/constants'
@@ -88,7 +88,6 @@ export function AccountSettings() {
 
   return (
     <div>
-      <Link to={`/account/${draft.id}`}>← 돌아가기</Link>
       <h1>계정 설정</h1>
 
       <Field label="계정명">

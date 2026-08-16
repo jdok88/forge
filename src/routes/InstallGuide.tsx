@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { subscribePush, type PushFailure } from '../lib/push'
 import { isNative } from '../lib/nativeAlarm'
 import { isIos, isAndroid } from '../lib/browser'
@@ -162,7 +161,6 @@ export function InstallGuide() {
   if (isNative()) {
     return (
       <div>
-        <Link to="/">← 홈</Link>
         <h1>알림 설정</h1>
         <p>
           이 앱은 타이머가 완료되면 기기가 직접 알림을 울립니다. 브라우저 푸시 알림과 달리
@@ -177,7 +175,6 @@ export function InstallGuide() {
   if (isIos()) {
     return (
       <div>
-        <Link to="/">← 홈</Link>
         <h1>알림 설정</h1>
 
         {!isStandalone() && (
@@ -218,7 +215,6 @@ export function InstallGuide() {
   if (isAndroid()) {
     return (
       <div>
-        <Link to="/">← 홈</Link>
         <h1>알림 설정</h1>
 
         <Card style={{ marginBottom: 'var(--sp-3)', border: '1px solid var(--accent)' }}>
@@ -255,7 +251,6 @@ export function InstallGuide() {
 
   return (
     <div>
-      <Link to="/">← 홈</Link>
       <h1>알림 설정</h1>
 
       <PushEnableSection {...pushEnableProps} />

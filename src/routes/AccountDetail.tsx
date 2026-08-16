@@ -239,7 +239,6 @@ export function AccountDetail() {
 
   return (
     <div>
-      <Link to="/">← 홈</Link>
       <h1 style={{ color: account.color }}>{account.nickname}</h1>
       <Link to={`/account/${account.id}/settings`}>설정</Link>
 
