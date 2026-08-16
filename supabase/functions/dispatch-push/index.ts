@@ -21,6 +21,15 @@ const TIER_ROMAN = ['I', 'II', 'III', 'IV', 'V']
 // 일일퀘스트 카탈로그: 망치도둑2 + 유령마을2 + 침략2 + 좀비러시2 + 클랜임무3 = 11
 const QUEST_SLOTS_TOTAL = 11
 
+// 오프라인 보상 한도 = 4시간 x (1 + 0.16 x 노드단계). src/game/durations.ts offlineCapSec 과 같은 식이다.
+const OFFLINE_BASE_SEC = 14_400
+const OFFLINE_PCT_PER_LEVEL = 16
+
+function offlineCapSec(lv: number): number {
+  const clamped = Math.min(25, Math.max(0, Math.trunc(lv)))
+  return Math.round(OFFLINE_BASE_SEC * (1 + (clamped * OFFLINE_PCT_PER_LEVEL) / 100))
+}
+
 type TimerLike = { kind: string; slot: number; meta: Record<string, unknown> }
 
 /** 알림 문구에 쓰는 "무엇이 어떻게 되는지" 설명. 완료·사전 알림이 같은 설명을 공유한다. */
@@ -229,9 +238,61 @@ Deno.serve(async () => {
     }
   }
 
+  // ── d) 오프라인 보상 한도 알림 ────────────────────────────
+  // "지금 보상 받음"을 누른 시각(offline_claimed_at)부터 한도까지 차오른다.
+  // offline_alerted_at 이 비어 있는 계정만 후보라서, 사이클당 정확히 한 번만 발송된다.
+  const { data: offlineDue } = await admin
+    .from('accounts')
+    .select('id, user_id, nickname, offline_time_lv, offline_claimed_at, servers(name)')
+    .not('offline_claimed_at', 'is', null)
+    .is('offline_alerted_at', null)
+    .limit(500)
+
+  const offlineUserIds = [...new Set((offlineDue ?? []).map(a => a.user_id))]
+  const offlinePrefByUser = new Map<string, { enabled: boolean; remindMin: number }>()
+  if (offlineUserIds.length > 0) {
+    const { data: prefRows } = await admin
+      .from('notification_prefs')
+      .select('user_id, offline_enabled, offline_remind_min')
+      .in('user_id', offlineUserIds)
+    for (const p of prefRows ?? []) {
+      offlinePrefByUser.set(p.user_id, { enabled: p.offline_enabled, remindMin: p.offline_remind_min })
+    }
+  }
+
+  let offlineSent = 0
+  for (const a of offlineDue ?? []) {
+    // 설정 행이 없으면 DB 기본값과 같은 값(켜짐, 1시간 전)을 쓴다.
+    const pref = offlinePrefByUser.get(a.user_id) ?? { enabled: true, remindMin: 60 }
+    if (!pref.enabled) continue
+
+    const fullAt = new Date(a.offline_claimed_at).getTime() + offlineCapSec(a.offline_time_lv) * 1000
+    const minutesLeft = Math.max(0, Math.round((fullAt - now.getTime()) / 60_000))
+    if (minutesLeft > pref.remindMin) continue
+
+    const srv = a.servers as unknown as { name: string }
+    const payload = {
+      title: `${srv.name} / ${a.nickname}`,
+      body: minutesLeft > 0
+        ? `오프라인 보상 한도까지 ${formatHoursLeft(minutesLeft / 60)}. 지금 받으세요`
+        : '오프라인 보상이 가득 찼습니다. 더 쌓이지 않습니다',
+      tag: `offline-${a.id}`, url: `account/${a.id}`,
+      silent: false, vibrate: [200, 100, 200],
+    }
+
+    const r = await pushToUser(a.user_id, payload)
+    if (nothingLeftToRetry(r)) {
+      await admin.from('accounts')
+        .update({ offline_alerted_at: new Date().toISOString() })
+        .eq('id', a.id)
+      offlineSent += r.delivered
+    }
+  }
+
   return Response.json({
     sent, timers: due?.length ?? 0,
     preSent, preTimers: preDue?.length ?? 0,
     questSent, questUsers: questPrefs?.length ?? 0,
+    offlineSent, offlineAccounts: offlineDue?.length ?? 0,
   })
 })

@@ -22,6 +22,10 @@ export interface AccountRow {
   gold_per_sec: number | null
   hammer_per_min: number | null
   potion_per_day: number | null
+  offline_time_lv: number
+  /** 마지막으로 오프라인 보상을 받은 시각. null 이면 아직 한 번도 안 눌러 알림 대상이 아니다. */
+  offline_claimed_at: string | null
+  offline_alerted_at: string | null
   sort_order: number
 }
 
@@ -90,6 +94,18 @@ export async function createAccount(server_id: string, nickname: string) {
 
 export async function updateAccount(id: string, patch: Partial<AccountRow>) {
   const { error } = await supabase.from('accounts').update(patch).eq('id', id)
+  if (error) throw error
+}
+
+/**
+ * 오프라인 보상을 방금 받았다고 기록한다. 이 시각부터 한도가 다시 차오르고,
+ * 이번 사이클의 알림 기록(offline_alerted_at)을 비워 다음 알림이 한 번 더 나가게 한다.
+ */
+export async function claimOffline(id: string) {
+  const { error } = await supabase
+    .from('accounts')
+    .update({ offline_claimed_at: new Date().toISOString(), offline_alerted_at: null })
+    .eq('id', id)
   if (error) throw error
 }
 

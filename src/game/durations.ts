@@ -1,8 +1,8 @@
 import {
   EGG_BASE_SEC, TECH_TABLE, FORGE_TABLE, FORGE_FREE_SKIP_LEVELS,
-  FORGE_MAX_LEVEL, RATE_PER_LEVEL,
+  FORGE_MAX_LEVEL, RATE_PER_LEVEL, OFFLINE_BASE_SEC,
 } from './constants'
-import { applySpeed, applyDiscount, clampNodeLevel } from './formulas'
+import { applySpeed, applyDiscount, applyBonus, clampNodeLevel } from './formulas'
 import type { AccountConfig, Rarity } from './types'
 
 /** (티어, 서브레벨) → TECH_TABLE 인덱스 */
@@ -27,6 +27,14 @@ export function techDuration(
     sec: applySpeed(row.sec, speedLv * RATE_PER_LEVEL.techSpeed),
     potions: applyDiscount(row.potions, costLv * RATE_PER_LEVEL.techCost),
   }
+}
+
+/**
+ * 오프라인 보상이 가득 차기까지의 시간(초). 이 시간을 넘겨 접속하면 넘친 만큼은 버려진다.
+ * 다른 노드와 달리 AccountConfig 를 받지 않는다 — 타이머 계산에는 쓰이지 않는 값이라서다.
+ */
+export function offlineCapSec(offlineTimeLv: number): number {
+  return applyBonus(OFFLINE_BASE_SEC, clampNodeLevel(offlineTimeLv) * RATE_PER_LEVEL.offlineTime)
 }
 
 export function isForgeFreeSkip(targetLevel: number): boolean {

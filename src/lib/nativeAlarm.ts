@@ -2,7 +2,9 @@ import { Capacitor } from '@capacitor/core'
 import { LocalNotifications, type LocalNotificationSchema } from '@capacitor/local-notifications'
 import { supabase } from './supabase'
 import type { TimerRow } from '../hooks/useTimers'
-import { completionBody, preAlertBody, notificationTitle } from '../game/describeTimer'
+import type { AccountRow } from '../hooks/useAccounts'
+import { completionBody, preAlertBody, offlineAlertBody, notificationTitle } from '../game/describeTimer'
+import { offlineCapSec } from '../game/durations'
 
 export function isNative(): boolean {
   return Capacitor.isNativePlatform()
@@ -33,6 +35,11 @@ function preAlertId(timerId: string): number {
   return hash30(timerId) * 2 + 1
 }
 
+/** 오프라인 보상 알림 id — 계정 UUID 로 같은 해시를 쓴다(타이머 id 와 우연히 겹칠 확률은 위와 같은 수준). */
+function offlineId(accountId: string): number {
+  return hash30(accountId) * 2
+}
+
 interface AccountInfo {
   nickname: string
   serverName: string
@@ -52,16 +59,30 @@ async function fetchAccountInfo(accountIds: string[]): Promise<Map<string, Accou
   return map
 }
 
-/** notification_prefs 가 없으면 웹 푸시와 같은 기본값(5분)을 쓴다. 0 = 사전 알림 사용 안 함. */
-async function fetchPreAlertMin(): Promise<number> {
+interface AlarmPrefs {
+  /** 완료 몇 분 전에 추가로 알릴지. 0 = 사전 알림 사용 안 함. */
+  preAlertMin: number
+  offlineEnabled: boolean
+  offlineRemindMin: number
+}
+
+/** notification_prefs 행이 없으면 웹 푸시·DB 기본값과 같은 값을 쓴다. */
+const DEFAULT_ALARM_PREFS: AlarmPrefs = { preAlertMin: 5, offlineEnabled: true, offlineRemindMin: 60 }
+
+async function fetchAlarmPrefs(): Promise<AlarmPrefs> {
   const { data: u } = await supabase.auth.getUser()
-  if (!u.user) return 5
+  if (!u.user) return DEFAULT_ALARM_PREFS
   const { data } = await supabase
     .from('notification_prefs')
-    .select('pre_alert_min')
+    .select('pre_alert_min, offline_enabled, offline_remind_min')
     .eq('user_id', u.user.id)
     .maybeSingle()
-  return (data?.pre_alert_min as number | undefined) ?? 5
+  if (!data) return DEFAULT_ALARM_PREFS
+  return {
+    preAlertMin: (data.pre_alert_min as number | null) ?? DEFAULT_ALARM_PREFS.preAlertMin,
+    offlineEnabled: (data.offline_enabled as boolean | null) ?? DEFAULT_ALARM_PREFS.offlineEnabled,
+    offlineRemindMin: (data.offline_remind_min as number | null) ?? DEFAULT_ALARM_PREFS.offlineRemindMin,
+  }
 }
 
 /**
@@ -70,7 +91,7 @@ async function fetchPreAlertMin(): Promise<number> {
  * 진행 중인 타이머는 완료 시각(+ 설정된 사전 알림 시각)에 하나씩 예약한다.
  * 완료 알림은 웹 푸시(dispatch-push)와 같은 제목/본문을 쓰도록 src/game/describeTimer 를 공유한다.
  */
-export async function syncLocalAlarms(timers: TimerRow[]): Promise<void> {
+export async function syncLocalAlarms(timers: TimerRow[], accounts: AccountRow[] = []): Promise<void> {
   if (!isNative()) return
 
   const perm = await LocalNotifications.checkPermissions()
@@ -81,6 +102,17 @@ export async function syncLocalAlarms(timers: TimerRow[]): Promise<void> {
 
   const now = Date.now()
   const active = timers.filter(t => new Date(t.ends_at).getTime() > now)
+  const prefs = await fetchAlarmPrefs()
+
+  // 오프라인 보상은 "지금 보상 받음"을 누른 계정만 대상이고, 한도가 이미 지난 계정은 알릴 게 없다.
+  const offlineDue = prefs.offlineEnabled
+    ? accounts.flatMap(a => {
+        if (!a.offline_claimed_at) return []
+        const fullAt = new Date(a.offline_claimed_at).getTime() + offlineCapSec(a.offline_time_lv) * 1000
+        const at = fullAt - prefs.offlineRemindMin * 60_000
+        return at > now ? [{ account: a, at, minutesLeft: prefs.offlineRemindMin }] : []
+      })
+    : []
 
   const pending = await LocalNotifications.getPending()
   const wantedIds = new Set<number>()
@@ -88,17 +120,31 @@ export async function syncLocalAlarms(timers: TimerRow[]): Promise<void> {
     wantedIds.add(completionId(t.id))
     wantedIds.add(preAlertId(t.id))
   }
+  for (const o of offlineDue) wantedIds.add(offlineId(o.account.id))
   const stale = pending.notifications.filter(n => !wantedIds.has(n.id))
   if (stale.length > 0) {
     await LocalNotifications.cancel({ notifications: stale.map(n => ({ id: n.id })) })
   }
 
-  if (active.length === 0) return
+  if (active.length === 0 && offlineDue.length === 0) return
 
-  const accountIds = [...new Set(active.map(t => t.account_id))]
-  const [accountInfo, preAlertMin] = await Promise.all([fetchAccountInfo(accountIds), fetchPreAlertMin()])
+  const accountIds = [...new Set([...active.map(t => t.account_id), ...offlineDue.map(o => o.account.id)])]
+  const accountInfo = await fetchAccountInfo(accountIds)
+  const preAlertMin = prefs.preAlertMin
 
   const notifications: LocalNotificationSchema[] = []
+
+  for (const o of offlineDue) {
+    const info = accountInfo.get(o.account.id)
+    if (!info) continue
+    notifications.push({
+      id: offlineId(o.account.id),
+      title: notificationTitle(info.serverName, info.nickname),
+      body: offlineAlertBody(o.minutesLeft),
+      schedule: { at: new Date(o.at), allowWhileIdle: true },
+    })
+  }
+
   for (const t of active) {
     const info = accountInfo.get(t.account_id)
     if (!info) continue // 계정 조회 실패 — 이 타이머는 이번 동기화에서 건너뛴다

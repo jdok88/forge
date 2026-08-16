@@ -1,4 +1,5 @@
 import { RARITY_LABEL } from './constants'
+import { formatDuration } from './format'
 import type { Rarity } from './types'
 
 const TIER_ROMAN = ['I', 'II', 'III', 'IV', 'V'] as const
@@ -37,6 +38,15 @@ export function preAlertBody(t: DescribableTimer, minutesLeft: number): string {
   const { subject, detail } = describeTarget(t)
   const base = detail ? `${subject} · ${detail}` : subject
   return `${base} · ${minutesLeft}분 후 완료`
+}
+
+/**
+ * 오프라인 보상 한도 알림 문구. dispatch-push 의 d) 분기와 문구가 같아야 한다.
+ * 남은 시간이 12시간(설정 상한)을 넘지 않으므로 '일' 단위는 나오지 않는다.
+ */
+export function offlineAlertBody(minutesLeft: number): string {
+  if (minutesLeft <= 0) return '오프라인 보상이 가득 찼습니다. 더 쌓이지 않습니다'
+  return `오프라인 보상 한도까지 ${formatDuration(minutesLeft * 60)}. 지금 받으세요`
 }
 
 /** 알림 제목 — 서버명 / 계정명. 웹 푸시(dispatch-push)와 동일한 형식. */

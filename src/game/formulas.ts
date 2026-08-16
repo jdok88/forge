@@ -17,6 +17,14 @@ export function applyDiscount(baseCost: number, discountPct: number): number {
 }
 
 /**
+ * 한도·보너스 증가. 타이머 속도(applySpeed)와 달리 기준값에 곱한다 —
+ * 줄어드는 값이 아니라 늘어나는 값이기 때문이다.
+ */
+export function applyBonus(base: number, bonusPct: number): number {
+  return Math.round(base * (1 + bonusPct / 100))
+}
+
+/**
  * 남은 시간을 젬으로 즉시완료할 때의 비용.
  * 대장간·테크 전 구간 공통 환율 20000초 = 46젬 → 23/10000.
  */

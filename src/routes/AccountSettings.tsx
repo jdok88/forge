@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAccounts, updateAccount, deleteAccount, toConfig, type AccountRow } from '../hooks/useAccounts'
 import { useTimers } from '../hooks/useTimers'
 import { RARITIES, RARITY_LABEL, RATE_PER_LEVEL, MAX_NODE_LEVEL } from '../game/constants'
-import { eggHatchSec } from '../game/durations'
+import { eggHatchSec, offlineCapSec } from '../game/durations'
 import { formatDuration } from '../game/format'
 import { Button } from '../components/ui/Button'
 import { Field } from '../components/ui/Field'
@@ -58,6 +58,7 @@ export function AccountSettings() {
         forge_speed_lv: draft.forge_speed_lv, forge_cost_lv: draft.forge_cost_lv,
         tech_speed_lv: draft.tech_speed_lv, tech_cost_lv: draft.tech_cost_lv,
         egg_speed_lv: draft.egg_speed_lv, forge_level: draft.forge_level,
+        offline_time_lv: draft.offline_time_lv,
         gold_per_sec: draft.gold_per_sec, hammer_per_min: draft.hammer_per_min,
         potion_per_day: draft.potion_per_day, nickname: draft.nickname,
       })
@@ -111,6 +112,9 @@ export function AccountSettings() {
         onChange={v => set({ tech_speed_lv: v })} note="시간 단축" />
       <LevelRow label="기술 노드 업그레이드 비용" value={draft.tech_cost_lv} ratePct={RATE_PER_LEVEL.techCost}
         onChange={v => set({ tech_cost_lv: v })} note="비용 할인" />
+      <LevelRow label="최대 오프라인 시간" value={draft.offline_time_lv} ratePct={RATE_PER_LEVEL.offlineTime}
+        onChange={v => set({ offline_time_lv: v })}
+        note={`→ ${formatDuration(offlineCapSec(draft.offline_time_lv))}`} />
 
       <h3>알 타이머</h3>
       {RARITIES.map(r => (

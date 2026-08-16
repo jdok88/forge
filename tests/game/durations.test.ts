@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { eggHatchSec, techDuration, forgeDuration, techIndex, isForgeFreeSkip } from '../../src/game/durations'
+import { eggHatchSec, techDuration, forgeDuration, techIndex, isForgeFreeSkip, offlineCapSec } from '../../src/game/durations'
 import type { AccountConfig } from '../../src/game/types'
 
 const VANILLA: AccountConfig = {
@@ -88,5 +88,22 @@ describe('isForgeFreeSkip', () => {
     expect(isForgeFreeSkip(2)).toBe(true)
     expect(isForgeFreeSkip(4)).toBe(true)
     expect(isForgeFreeSkip(5)).toBe(false)
+  })
+})
+
+describe('offlineCapSec', () => {
+  it('노드 0단계는 기준값 4시간', () => {
+    expect(offlineCapSec(0)).toBe(14_400)
+  })
+  // +16%/단계가 기준값에 곱해진다 — 나누는 타이머 속도와 방향이 반대다
+  it('1단계는 +16% = 4시간 38분 24초', () => {
+    expect(offlineCapSec(1)).toBe(16_704)
+  })
+  it('만렙 25단계는 +400% = 20시간', () => {
+    expect(offlineCapSec(25)).toBe(72_000)
+  })
+  it('범위 밖 입력은 0~25 로 잘린다', () => {
+    expect(offlineCapSec(-3)).toBe(14_400)
+    expect(offlineCapSec(99)).toBe(72_000)
   })
 })

@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useAccounts, updateAccount, toConfig, type AccountRow } from '../hooks/useAccounts'
+import { useAccounts, updateAccount, claimOffline, toConfig, type AccountRow } from '../hooks/useAccounts'
 import { useTimers, startTimer, completeTimer, cancelTimer, type TimerKind, type TimerRow } from '../hooks/useTimers'
 import { useDailyQuests } from '../hooks/useDailyQuests'
 import { DAILY_QUESTS } from '../game/quests'
-import { eggHatchSec, forgeDuration, isForgeFreeSkip } from '../game/durations'
+import { eggHatchSec, forgeDuration, isForgeFreeSkip, offlineCapSec } from '../game/durations'
 import { formatCountdown, formatDuration, formatAmount } from '../game/format'
 import { resourceEta } from '../game/eta'
 import { RARITY_LABEL, MAX_NODE_LEVEL } from '../game/constants'
@@ -14,6 +14,8 @@ import { SlotCard } from '../components/SlotCard'
 import { TimerStartSheet } from '../components/TimerStartSheet'
 import { DailyQuests } from '../components/DailyQuests'
 import { TabBar, type TabDef } from '../components/ui/TabBar'
+import { Button } from '../components/ui/Button'
+import { SectionTitle } from '../components/ui/SectionTitle'
 import { SettingsHint } from '../components/ui/SettingsHint'
 
 const EGG_SLOTS = [1, 2, 3, 4]
@@ -45,6 +47,56 @@ function GoldEta({ account }: { account: AccountRow }) {
     <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
       다음 레벨 골드 {formatAmount(need)} · 0부터 모으면 {formatDuration(min * 60)}
     </p>
+  )
+}
+
+/**
+ * 오프라인 보상 한도. 게임을 끈 뒤 보상이 쌓이다 한도에서 멈추므로, 한도에 닿기 전에 받아야 한다.
+ * 앱은 게임을 언제 껐는지 알 수 없어서 사용자가 "보상 받음"을 눌러 시작점을 찍어 준다.
+ */
+function OfflineReward({ account, onClaimed }: { account: AccountRow; onClaimed: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const capSec = offlineCapSec(account.offline_time_lv)
+  const claimedAt = account.offline_claimed_at
+  const remainSec = claimedAt
+    ? Math.round((new Date(claimedAt).getTime() + capSec * 1000 - Date.now()) / 1000)
+    : null
+
+  async function claim() {
+    setBusy(true)
+    setError(null)
+    try {
+      await claimOffline(account.id)
+      await onClaimed()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '기록하지 못했습니다.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: 'var(--sp-3)' }}>
+      <SectionTitle>오프라인 보상 (한도 {formatDuration(capSec)})</SectionTitle>
+      {remainSec === null ? (
+        <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+          게임에서 오프라인 보상을 받을 때 아래 버튼을 같이 눌러 주세요. 그 시각부터 한도를 계산해
+          가득 차기 전에 알려 드립니다.
+        </p>
+      ) : remainSec > 0 ? (
+        <p style={{ fontSize: 'var(--fs-sm)' }}>
+          가득 차기까지 <strong>{formatDuration(remainSec)}</strong> 남음
+        </p>
+      ) : (
+        <p style={{ color: 'var(--danger)', fontSize: 'var(--fs-sm)' }}>
+          한도가 가득 찼습니다. 지금부터는 보상이 더 쌓이지 않습니다.
+        </p>
+      )}
+      <Button onClick={() => void claim()} disabled={busy}>지금 보상 받음</Button>
+      {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
+    </div>
   )
 }
 
@@ -292,6 +344,7 @@ export function AccountDetail() {
           <>
             <h2>대장간 (레벨 {account.forge_level})</h2>
             <GoldEta account={account} />
+            <OfflineReward account={account} onClaimed={reloadAccounts} />
             {account.forge_level === 1 && (
               <SettingsHint accountId={account.id} message="대장간 레벨이 1(기본값)입니다. 실제 레벨이 다르면 설정해 주세요." />
             )}

@@ -13,16 +13,26 @@ interface Prefs {
   pre_alert_min: number
   daily_quest_enabled: boolean
   daily_quest_remind_hours_before: number
+  offline_enabled: boolean
+  offline_remind_min: number
 }
 
 const DEFAULT_PREFS: Prefs = {
   pre_alert_min: 5,
   daily_quest_enabled: true,
   daily_quest_remind_hours_before: 1,
+  offline_enabled: true,
+  offline_remind_min: 60,
 }
 
 const PRE_ALERT_MIN_OPTIONS = [0, 1, 3, 5, 10, 15, 30, 60, 120]
 const REMIND_HOURS_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1)
+const OFFLINE_REMIND_MIN_OPTIONS = [0, 30, 60, 120, 180, 360]
+
+function offlineRemindLabel(min: number): string {
+  if (min === 0) return '가득 찬 순간'
+  return min < 60 ? `${min}분 전` : `${min / 60}시간 전`
+}
 
 /**
  * 탈퇴 확인 2단계 — window.confirm 대신 인라인으로 경고를 보여주고, 두 번째 탭에서만 RPC를 호출한다.
@@ -112,7 +122,7 @@ export function NotificationSettings() {
         if (!u.user) throw new Error('로그인이 필요합니다')
         const { data, error } = await supabase
           .from('notification_prefs')
-          .select('pre_alert_min, daily_quest_enabled, daily_quest_remind_hours_before')
+          .select('pre_alert_min, daily_quest_enabled, daily_quest_remind_hours_before, offline_enabled, offline_remind_min')
           .eq('user_id', u.user.id)
           .maybeSingle()
         if (error) throw error
@@ -144,6 +154,8 @@ export function NotificationSettings() {
         pre_alert_min: draft.pre_alert_min,
         daily_quest_enabled: draft.daily_quest_enabled,
         daily_quest_remind_hours_before: draft.daily_quest_remind_hours_before,
+        offline_enabled: draft.offline_enabled,
+        offline_remind_min: draft.offline_remind_min,
       }, { onConflict: 'user_id' })
       if (error) throw error
       setSaved(true)
@@ -206,6 +218,33 @@ export function NotificationSettings() {
               >
                 {REMIND_HOURS_OPTIONS.map(n => (
                   <option key={n} value={n}>{n}시간 전</option>
+                ))}
+              </select>
+            </Field>
+          </section>
+
+          <section>
+            <h2>오프라인 보상 알림</h2>
+            <p style={{ color: 'var(--text-dim)', fontSize: 'var(--fs-sm)' }}>
+              오프라인 보상은 한도까지만 쌓이고 그 뒤로는 버려집니다. 계정 화면의
+              <strong> 지금 보상 받음</strong>을 누른 시각부터 한도를 계산해, 가득 차기 전에 알려 드립니다.
+              한도는 계정별 <strong>최대 오프라인 시간</strong> 노드 단계에 따라 달라집니다.
+            </p>
+            <label>
+              <input
+                type="checkbox" checked={draft.offline_enabled}
+                onChange={e => set({ offline_enabled: e.target.checked })}
+              />
+              한도가 차기 전에 알림 창에 표시
+            </label>
+            <Field label="가득 차기 얼마 전에 알릴지">
+              <select
+                value={draft.offline_remind_min}
+                disabled={!draft.offline_enabled}
+                onChange={e => set({ offline_remind_min: Number(e.target.value) })}
+              >
+                {OFFLINE_REMIND_MIN_OPTIONS.map(n => (
+                  <option key={n} value={n}>{offlineRemindLabel(n)}</option>
                 ))}
               </select>
             </Field>

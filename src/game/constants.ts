@@ -108,6 +108,13 @@ export const RATE_PER_LEVEL = {
   techCost: 2,
   forgeSpeed: 2,
   forgeCost: 1,
+  offlineTime: 16,
 } as const
+
+/**
+ * 오프라인 보상이 쌓이는 기준 한도(초). "최대 오프라인 시간" 노드 0단계에서 4시간.
+ * 출처: 사용자 게임 내 확인. docs/reference/tech-nodes.md 대장간 #8.
+ */
+export const OFFLINE_BASE_SEC = 14_400
 
 export const MAX_NODE_LEVEL = 25
