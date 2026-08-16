@@ -27,12 +27,29 @@ export function useDailyQuests(accountId: string) {
     const next = current >= max ? 0 : current + 1
     const { data: u } = await supabase.auth.getUser()
     if (!u.user) throw new Error('로그인이 필요합니다')
-    await supabase.from('daily_quests').upsert({
+    const { error } = await supabase.from('daily_quests').upsert({
       user_id: u.user.id, account_id: accountId,
       quest_date: date, quest_key: key, done_count: next,
     }, { onConflict: 'account_id,quest_date,quest_key' })
+    if (error) throw error
     setCounts(c => ({ ...c, [key]: next }))
   }, [accountId, counts, date])
 
-  return { counts, loading, bump, reload }
+  /** 모든 퀘스트를 한 번에 최대치로 — 하나씩 여러 번 탭하는 수고를 줄인다 */
+  const completeAll = useCallback(async () => {
+    const { data: u } = await supabase.auth.getUser()
+    if (!u.user) throw new Error('로그인이 필요합니다')
+    const userId = u.user.id
+    const { error } = await supabase.from('daily_quests').upsert(
+      DAILY_QUESTS.map(q => ({
+        user_id: userId, account_id: accountId,
+        quest_date: date, quest_key: q.key, done_count: q.max,
+      })),
+      { onConflict: 'account_id,quest_date,quest_key' },
+    )
+    if (error) throw error
+    setCounts(Object.fromEntries(DAILY_QUESTS.map(q => [q.key, q.max])))
+  }, [accountId, date])
+
+  return { counts, loading, bump, completeAll, reload }
 }
