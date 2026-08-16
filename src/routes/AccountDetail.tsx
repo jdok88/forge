@@ -4,7 +4,7 @@ import { useAccounts, updateAccount, claimOffline, toConfig, type AccountRow } f
 import { useTimers, startTimer, completeTimer, cancelTimer, type TimerKind, type TimerRow } from '../hooks/useTimers'
 import { useDailyQuests } from '../hooks/useDailyQuests'
 import { DAILY_QUESTS } from '../game/quests'
-import { eggHatchSec, forgeDuration, isForgeFreeSkip, offlineCapSec } from '../game/durations'
+import { eggHatchSec, forgeDuration, techDuration, isForgeFreeSkip, offlineCapSec } from '../game/durations'
 import { formatCountdown, formatDuration, formatAmount } from '../game/format'
 import { resourceEta } from '../game/eta'
 import { RARITY_LABEL, MAX_NODE_LEVEL } from '../game/constants'
@@ -19,13 +19,15 @@ import { SectionTitle } from '../components/ui/SectionTitle'
 import { SettingsHint } from '../components/ui/SettingsHint'
 
 const EGG_SLOTS = [1, 2, 3, 4]
+const TIER_ROMAN = ['I', 'II', 'III', 'IV', 'V'] as const
 const FORGE_MAX_LEVEL = 35
 type TabKey = 'pet' | 'tech' | 'forge' | 'quest'
 
 type ContinuePrompt =
   | { kind: 'egg'; slot: number; rarity: Rarity }
   | { kind: 'forge'; slot: number; newLevel: number }
-  | { kind: 'tech'; slot: number; message: string }
+  /** 방금 끝낸 연구의 노드·티어·단계. 여기서 다음 단계를 계산해 이어서 시작을 제안한다. */
+  | { kind: 'tech'; slot: number; nodeId: string; tier: number; level: number; bump: string | null }
 
 /** 한글 체언 뒤 이/가 조사 선택 — 받침 있으면 '이', 없으면 '가' */
 function josaGa(word: string): '이' | '가' {
@@ -165,8 +167,14 @@ export function AccountDetail() {
         setContinuePrompt({ kind: 'egg', slot: t.slot, rarity: t.meta.rarity as Rarity })
       } else if (t?.kind === 'forge') {
         setContinuePrompt({ kind: 'forge', slot: t.slot, newLevel: t.meta.targetLevel as number })
-      } else if (t && techBumpMessage) {
-        setContinuePrompt({ kind: 'tech', slot: t.slot, message: techBumpMessage })
+      } else if (t?.kind === 'tech') {
+        setContinuePrompt({
+          kind: 'tech', slot: t.slot,
+          nodeId: t.meta.nodeId as string,
+          tier: t.meta.tier as number,
+          level: t.meta.level as number,
+          bump: techBumpMessage,
+        })
       }
     } catch (e) {
       setActionError(e instanceof Error ? e.message : '완료 처리에 실패했습니다.')
@@ -213,6 +221,25 @@ export function AccountDetail() {
       await reload()
     } catch (e) {
       setActionError(e instanceof Error ? e.message : '이어서 부화 시작에 실패했습니다.')
+    } finally {
+      setContinueBusy(false)
+    }
+  }
+
+  async function onContinueTech(slot: number, nodeId: string, tier: number, level: number) {
+    if (!account) return
+    setActionError(null)
+    setContinueBusy(true)
+    try {
+      const r = techDuration(tier, level, toConfig(account))
+      await startTimer({
+        accountId: account.id, kind: 'tech', slot,
+        meta: { nodeId, tier, level }, sec: r.sec, autoSec: r.sec,
+      })
+      setContinuePrompt(null)
+      await reload()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : '다음 단계 시작에 실패했습니다.')
     } finally {
       setContinueBusy(false)
     }
@@ -295,11 +322,33 @@ export function AccountDetail() {
 
       {tab === 'tech' && (() => {
         const techPrompt = continuePrompt?.kind === 'tech' && continuePrompt.slot === 1
-          ? {
-              message: continuePrompt.message,
-              onDismiss: () => setContinuePrompt(null),
-              disabled: continueBusy,
-            }
+          ? (() => {
+              const { nodeId, tier, level, bump } = continuePrompt
+              const nodeName = TECH_NODES.find(n => n.id === nodeId)?.name ?? '기술'
+              const done = `${nodeName} ${TIER_ROMAN[tier - 1]} ${level}/5`
+              // 서브레벨 5/5 다음은 다음 티어의 1/5 이다. 티어 V 5/5 가 만렙.
+              const [nextTier, nextLevel] = level >= 5 ? [tier + 1, 1] : [tier, level + 1]
+
+              if (nextTier > 5) {
+                return {
+                  message: `${done} 완료. 이 기술은 최대 단계입니다.`,
+                  note: bump ?? undefined,
+                  onDismiss: () => setContinuePrompt(null),
+                  disabled: continueBusy,
+                }
+              }
+
+              const r = techDuration(nextTier, nextLevel, toConfig(account))
+              const cost = `물약 ${formatAmount(r.potions)} · ${formatDuration(r.sec)}`
+              return {
+                message: `${done} 완료. 다음 단계(${TIER_ROMAN[nextTier - 1]} ${nextLevel}/5)를 바로 시작할까요?`,
+                note: bump ? `${cost} · ${bump}` : cost,
+                confirmLabel: '다음 단계 시작',
+                onConfirm: () => void onContinueTech(1, nodeId, nextTier, nextLevel),
+                onDismiss: () => setContinuePrompt(null),
+                disabled: continueBusy,
+              }
+            })()
           : undefined
 
         return (
